@@ -40,7 +40,3 @@ src/app/          your package — importable, installable, not just a script
 tests/            pytest tests, mirroring src/
 pyproject.toml    dependencies and tool configuration — the single source of truth
 ```
-
-
-## LICENSE
-Copyright (c) 2026 Hector Prats, Will Tobin, Isaac Anwar, y Tuna Narin
