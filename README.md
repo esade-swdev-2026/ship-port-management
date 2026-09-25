@@ -1,11 +1,6 @@
-# app
+## Who is this for 
+This project is for port managers to track the activity in their ports, while making sure incoming movement is valid. 
 
-> **First thing: rename `app` to your project.** It appears in this file, in
-> `pyproject.toml` (`name`, `[project.scripts]`, `[tool.hatch.build.targets.wheel]`),
-> in the folder `src/app/`, and in the imports under `tests/`. Session 5's lab walks
-> you through it.
-
-One or two sentences on what your program does and who it is for.
 
 ## Install
 
@@ -47,3 +42,7 @@ src/app/          your package — importable, installable, not just a script
 tests/            pytest tests, mirroring src/
 pyproject.toml    dependencies and tool configuration — the single source of truth
 ```
+
+
+## LICENSE
+Copyright (c) 2026 Hector Prats, Will Tobin, Isaac Anwar, y Tuna Narin

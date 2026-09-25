@@ -1,28 +1,15 @@
 from typer.testing import CliRunner
 
-from app.cli import app
+from ship_port_management.cli import app
 
 runner = CliRunner()
 
 
-def test_greet_says_hello() -> None:
-    result = runner.invoke(app, ["greet", "Ada"])
+def test_register_vessel_succeeds_within_capacity() -> None:
+    result = runner.invoke(app, ["MV-ATLAS", "500", "--cargo-units", "40"])
     assert result.exit_code == 0
-    assert "Hello, Ada!" in result.stdout
 
 
-def test_greet_repeats_with_count() -> None:
-    result = runner.invoke(app, ["greet", "Ada", "--count", "3"])
-    assert result.exit_code == 0
-    assert result.stdout.count("Hello, Ada!") == 3
-
-
-def test_greet_rejects_bad_count() -> None:
-    result = runner.invoke(app, ["greet", "Ada", "--count", "0"])
+def test_register_vessel_fails_over_capacity() -> None:
+    result = runner.invoke(app, ["MV-ATLAS", "40", "--cargo-units", "500"])
     assert result.exit_code == 1
-
-
-def test_bye_says_goodbye() -> None:
-    result = runner.invoke(app, ["bye", "Ada"])
-    assert result.exit_code == 0
-    assert "Goodbye, Ada." in result.stdout
