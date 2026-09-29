@@ -17,8 +17,6 @@ and CI resolve the same ones. When you change a dependency in `pyproject.toml`, 
 
 ```
 uv run app --help
-uv run app greet World
-uv run app greet World --count 3
 ```
 
 ## Develop
