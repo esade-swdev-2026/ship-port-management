@@ -16,7 +16,8 @@ and CI resolve the same ones. When you change a dependency in `pyproject.toml`, 
 ## Run
 
 ```
-uv run app --help
+uv run ship-port-management --help
+uv run ship-port-management register-vessel MV-ATLAS 500 --cargo-units 40
 ```
 
 ## Develop
@@ -34,9 +35,9 @@ If they pass here, CI passes.
 ## Layout
 
 ```
-src/app/          your package — importable, installable, not just a script
-  cli.py          the typer command-line interface
-  __main__.py     lets `python -m app` work
-tests/            pytest tests, mirroring src/
-pyproject.toml    dependencies and tool configuration — the single source of truth
+src/ship_port_management/   your package — importable, installable, not just a script
+  cli.py                    the typer command-line interface
+  __main__.py               lets `python -m ship_port_management` work
+tests/                      pytest tests, mirroring src/
+pyproject.toml              dependencies and tool configuration — the single source of truth
 ```
