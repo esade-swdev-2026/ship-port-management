@@ -1,14 +1,22 @@
 import typer
 
-app = typer.Typer(help="Replace this with your project's command-line interface.")
+from ship_port_management.port import Ship, remaining_capacity
+
+app = typer.Typer(help="Track ships, docks and cargo in a port.")
+
+
+@app.callback()
+def main() -> None:
+    """Track ships, docks and cargo in a port."""
 
 
 @app.command()
 def register_vessel(imo: str, capacity: int, cargo_units: int = 0) -> None:
     if cargo_units > capacity:
-        typer.echo("cago units can't exceed capacity", err=True)
+        typer.echo("cargo units can't exceed capacity", err=True)
         raise typer.Exit(code=1)
-    typer.echo(f"Ship {imo} has {abs(cargo_units - capacity)} too many units")
+    ship = Ship(imo, capacity, cargo_units)
+    typer.echo(f"Registered ship {ship.imo} with room for {remaining_capacity(ship)} more units")
 
 
 if __name__ == "__main__":
