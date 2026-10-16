@@ -3,7 +3,7 @@ THE BACKLOG
 1. **Register ship arrivals**  
    Done when an operator can record a ship's unique ID, name, arrival time, cargo capacity, and the number of cargo units on board.
 
-2. **Manage docks**  
+2. **Manage docks** 
    Done when an operator can add docks with a maximum ship size and hourly rate, and see whether each is available or occupied.
 
 3. **Dock a ship**  

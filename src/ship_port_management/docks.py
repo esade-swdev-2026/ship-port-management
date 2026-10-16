@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 
+MIN_SHIP_SIZE = 1
+MIN_HOURLY_RATE = 0.0
+
 
 @dataclass(frozen=True)
 class Dock:
@@ -9,12 +12,11 @@ class Dock:
 
 
 def add_dock(docks: list[Dock], new_dock: Dock) -> list[Dock]:
-
-    if new_dock.max_ship_size <= 0:
+    if new_dock.max_ship_size < MIN_SHIP_SIZE:
         raise ValueError(f"Max ship size, {new_dock.max_ship_size}, must be a positive integer.")
 
-    if new_dock.hourly_rate < 0:
-        raise ValueError(f"Hourly Rate, {new_dock.hourly_rate}, can not be negative.")
+    if new_dock.hourly_rate < MIN_HOURLY_RATE:
+        raise ValueError(f"Hourly rate, {new_dock.hourly_rate}, can not be negative.")
 
     for dock in docks:
         if new_dock.dock_id == dock.dock_id:
