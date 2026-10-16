@@ -26,6 +26,15 @@ def is_duplicate_ship(new_ship: Ship, registered: list[Ship]) -> bool:
 def register_ship(new_ship: Ship, registered: list[Ship]) -> list[Ship]:
     if is_duplicate_ship(new_ship, registered):
         raise ValueError(f"ship: {new_ship.ship_id} has already been registered")
+    if new_ship.capacity <= 0:
+        raise ValueError("capacity must be positive")
     if not cargo_within_capacity(new_ship):
         raise ValueError("cargo units must be between 0 and capacity")
     return registered + [new_ship]
+
+
+def describe_ship(ship: Ship) -> str:
+    return (
+        f"{ship.ship_id}  {ship.name}  arrived {ship.arrival_time}  "
+        f"cargo {ship.cargo_units}/{ship.capacity}"
+    )

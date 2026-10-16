@@ -3,6 +3,7 @@ import pytest
 from ship_port_management.ships import (
     Ship,
     cargo_within_capacity,
+    describe_ship,
     is_duplicate_ship,
     register_ship,
     remaining_capacity,
@@ -81,3 +82,13 @@ def test_register_does_not_change_the_original_list() -> None:
     registered = [ATLAS]
     register_ship(NOVA, registered)
     assert registered == [ATLAS]
+
+
+def test_register_zero_capacity_is_refused() -> None:
+    no_room = Ship("IMO9000001", "Empty", "2026-10-14T09:30", 0, 0)
+    with pytest.raises(ValueError):
+        register_ship(no_room, [])
+
+
+def test_describe_ship_shows_id_name_arrival_and_cargo() -> None:
+    assert describe_ship(ATLAS) == "IMO9074729  Atlas  arrived 2026-10-14T09:30  cargo 40/500"
