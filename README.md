@@ -82,5 +82,7 @@ pyproject.toml              dependencies and tool configuration, the single sour
 
 ## Use of AI
 ```
-We used Claude as an assistant while building this project: to explain course concepts, plan the structure, review our code and suggest code snippets. Every change was written into the files, checked with ruff, mypy and pytest, and reviewed by the team before it was merged.
+We used Claude as an assistant while building this project: to explain course concepts, plan
+the structure, review our code and suggest code snippets. Every change was written into the
+files, checked with ruff, mypy and pytest, and reviewed by the team before it was merged.
 ```
