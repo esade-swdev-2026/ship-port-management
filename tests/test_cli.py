@@ -45,3 +45,9 @@ def test_list_vessels_shows_a_registered_ship() -> None:
     runner.invoke(app, REGISTER_ATLAS)
     result = runner.invoke(app, ["list-vessels"])
     assert "MV-ATLAS  Atlas" in result.output
+
+
+def test_add_dock_with_zero_size_fails_with_message() -> None:
+    result = runner.invoke(app, ["add-dock", "D1", "0", "100"])
+    assert result.exit_code == 1
+    assert "positive" in result.output

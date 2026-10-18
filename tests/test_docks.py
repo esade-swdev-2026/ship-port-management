@@ -1,6 +1,6 @@
 import pytest
 
-from ship_port_management.docks import Dock, add_dock, is_dock_available
+from ship_port_management.docks import Dock, add_dock, describe_dock, is_dock_available
 
 
 def test_add_dock_list_not_changed() -> None:
@@ -71,3 +71,15 @@ def test_occupied_dock_unavailable() -> None:
 def test_unoccupied_dock_available() -> None:
     dock = Dock(dock_id="AA", max_ship_size=100, hourly_rate=100.0)
     assert is_dock_available(dock, occupied_dock_ids={"BB", "CC"})
+
+
+def test_describe_free_dock_says_available() -> None:
+    dock = Dock(dock_id="AA", max_ship_size=100, hourly_rate=100.0)
+    description = describe_dock(dock, occupied_dock_ids=set())
+    assert "available" in description
+
+
+def test_describe_occupied_dock_says_occupied() -> None:
+    dock = Dock(dock_id="AA", max_ship_size=100, hourly_rate=100.0)
+    description = describe_dock(dock, occupied_dock_ids={"AA"})
+    assert "occupied" in description
