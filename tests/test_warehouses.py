@@ -3,6 +3,7 @@ import pytest
 from ship_port_management.warehouses import (
     Warehouse,
     add_warehouse,
+    describe_warehouse,
     free_units,
     is_duplicate_warehouse,
     stored_within_capacity,
@@ -106,3 +107,9 @@ def test_negative_daily_rate_is_refused() -> None:
 def test_stored_above_capacity_is_refused() -> None:
     with pytest.raises(ValueError):
         add_warehouse(north_storing(NORTH_CAPACITY + 1), [])
+
+
+def test_describe_warehouse_shows_used_and_free_units() -> None:
+    assert describe_warehouse(north_storing(50)) == (
+        "W-NORTH  used 50/200  free 150  rate 1.5 per unit per day"
+    )

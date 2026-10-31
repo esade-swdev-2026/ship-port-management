@@ -3,6 +3,7 @@ from pathlib import Path
 
 from ship_port_management.docks import Dock
 from ship_port_management.ships import Ship
+from ship_port_management.warehouses import Warehouse
 
 SHIP_ID = 0
 NAME = 1
@@ -17,6 +18,13 @@ MAX_SHIP_SIZE = 1
 HOURLY_RATE = 2
 DOCK_HEADER = ["dock_id", "max_ship_size", "hourly_rate"]
 DOCK_FIELDS_PER_ROW = len(DOCK_HEADER)
+
+WAREHOUSE_ID = 0
+WAREHOUSE_CAPACITY = 1
+DAILY_RATE_PER_UNIT = 2
+STORED_UNITS = 3
+WAREHOUSE_HEADER = ["warehouse_id", "capacity", "daily_rate_per_unit", "stored_units"]
+WAREHOUSE_FIELDS_PER_ROW = len(WAREHOUSE_HEADER)
 
 
 def read_ships(path: Path) -> list[Ship]:
@@ -79,3 +87,40 @@ def write_docks(path: Path, docks: list[Dock]) -> None:
         writer.writerow(DOCK_HEADER)
         for dock in docks:
             writer.writerow([dock.dock_id, dock.max_ship_size, dock.hourly_rate])
+
+
+def read_warehouses(path: Path) -> list[Warehouse]:
+    if not path.exists():
+        return []
+    warehouses: list[Warehouse] = []
+    with path.open(newline="") as handle:
+        reader = csv.reader(handle)
+        next(reader, None)
+        for row in reader:
+            if len(row) != WAREHOUSE_FIELDS_PER_ROW:
+                raise ValueError(f"malformed row in {path}: {row}")
+            warehouses.append(
+                Warehouse(
+                    warehouse_id=row[WAREHOUSE_ID],
+                    capacity=int(row[WAREHOUSE_CAPACITY]),
+                    daily_rate_per_unit=float(row[DAILY_RATE_PER_UNIT]),
+                    stored_units=int(row[STORED_UNITS]),
+                )
+            )
+    return warehouses
+
+
+def write_warehouses(path: Path, warehouses: list[Warehouse]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(WAREHOUSE_HEADER)
+        for warehouse in warehouses:
+            writer.writerow(
+                [
+                    warehouse.warehouse_id,
+                    warehouse.capacity,
+                    warehouse.daily_rate_per_unit,
+                    warehouse.stored_units,
+                ]
+            )
