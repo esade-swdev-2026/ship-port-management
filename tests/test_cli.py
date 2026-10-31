@@ -10,6 +10,8 @@ runner = CliRunner()
 REGISTER_ATLAS = ["register-vessel", "MV-ATLAS", "Atlas", "500", "--cargo-units", "40"]
 REGISTER_OVERLOADED = ["register-vessel", "MV-ATLAS", "Atlas", "40", "--cargo-units", "500"]
 ADD_NORTH_WAREHOUSE = ["add-warehouse", "W-NORTH", "200", "1.5"]
+ADD_DOCK_D1 = ["add-dock", "D1", "500", "120"]
+DOCK_ATLAS_AT_D1 = ["dock-vessel", "MV-ATLAS", "D1"]
 
 
 @pytest.fixture(autouse=True)
@@ -72,3 +74,29 @@ def test_add_warehouse_with_zero_capacity_fails_with_message() -> None:
     result = runner.invoke(app, ["add-warehouse", "W-NORTH", "0", "1.5"])
     assert result.exit_code == 1
     assert "capacity must be positive" in result.output
+
+
+def test_docked_ship_makes_its_dock_occupied() -> None:
+    runner.invoke(app, REGISTER_ATLAS)
+    runner.invoke(app, ADD_DOCK_D1)
+    result = runner.invoke(app, DOCK_ATLAS_AT_D1)
+    assert result.exit_code == 0
+    assert "Docked MV-ATLAS at D1" in result.output
+    assert "Status: occupied" in runner.invoke(app, ["list-docks"]).output
+
+
+def test_docking_an_unregistered_ship_fails_with_message() -> None:
+    runner.invoke(app, ADD_DOCK_D1)
+    result = runner.invoke(app, DOCK_ATLAS_AT_D1)
+    assert result.exit_code == 1
+    assert "not registered" in result.output
+
+
+def test_docking_into_an_occupied_dock_fails() -> None:
+    runner.invoke(app, REGISTER_ATLAS)
+    runner.invoke(app, ["register-vessel", "MV-NOVA", "Nova", "300"])
+    runner.invoke(app, ADD_DOCK_D1)
+    runner.invoke(app, DOCK_ATLAS_AT_D1)
+    result = runner.invoke(app, ["dock-vessel", "MV-NOVA", "D1"])
+    assert result.exit_code == 1
+    assert "already occupied" in result.output

@@ -4,6 +4,7 @@ from ship_port_management.ships import (
     Ship,
     cargo_within_capacity,
     describe_ship,
+    find_ship,
     is_duplicate_ship,
     register_ship,
     remaining_capacity,
@@ -92,3 +93,12 @@ def test_register_zero_capacity_is_refused() -> None:
 
 def test_describe_ship_shows_id_name_arrival_and_cargo() -> None:
     assert describe_ship(ATLAS) == "IMO9074729  Atlas  arrived 2026-10-14T09:30  cargo 40/500"
+
+
+def test_find_ship_returns_the_matching_ship() -> None:
+    assert find_ship("IMO9012328", [ATLAS, NOVA]) == NOVA
+
+
+def test_find_unknown_ship_is_refused() -> None:
+    with pytest.raises(ValueError, match="not registered"):
+        find_ship("IMO0000000", [ATLAS])

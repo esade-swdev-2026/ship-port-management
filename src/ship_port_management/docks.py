@@ -38,3 +38,10 @@ def describe_dock(dock: Dock, occupied_dock_ids: set[str]) -> str:
         f"Dock id: {dock.dock_id}, Max ship size = {dock.max_ship_size}, "
         f"Hourly rate: {dock.hourly_rate}, Status: {status}"
     )
+
+
+def find_dock(dock_id: str, docks: list[Dock]) -> Dock:
+    for dock in docks:
+        if dock.dock_id == dock_id:
+            return dock
+    raise ValueError(f"dock {dock_id} does not exist")
