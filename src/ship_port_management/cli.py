@@ -3,12 +3,21 @@ from pathlib import Path
 
 import typer
 
-from ship_port_management.csv_handling import read_docks, read_ships, write_docks, write_ships
+from ship_port_management.csv_handling import (
+    read_docks,
+    read_ships,
+    read_warehouses,
+    write_docks,
+    write_ships,
+    write_warehouses,
+)
 from ship_port_management.docks import Dock, add_dock, describe_dock
 from ship_port_management.ships import Ship, describe_ship, register_ship, remaining_capacity
+from ship_port_management.warehouses import Warehouse, add_warehouse, describe_warehouse
 
 DATA_FILE = Path("data") / "ships.csv"
 DOCKS_FILE = Path("data") / "docks.csv"
+WAREHOUSES_FILE = Path("data") / "warehouses.csv"
 app = typer.Typer(help="Track ships, docks and cargo in a port.")
 
 
@@ -74,6 +83,35 @@ def list_docks() -> None:
         return
     for dock in docks:
         typer.echo(describe_dock(dock, set()))
+
+
+@app.command(name="add-warehouse")
+def add_new_warehouse(warehouse_id: str, capacity: int, daily_rate_per_unit: float) -> None:
+    new_warehouse = Warehouse(warehouse_id, capacity, daily_rate_per_unit)
+    try:
+        existing = read_warehouses(WAREHOUSES_FILE)
+        write_warehouses(WAREHOUSES_FILE, add_warehouse(new_warehouse, existing))
+    except (OSError, ValueError) as error:
+        typer.echo(f"could not add warehouse {warehouse_id}: {error}", err=True)
+        raise typer.Exit(code=1) from None
+    typer.echo(
+        f"Added warehouse {warehouse_id}, room for {capacity} units "
+        f"at {daily_rate_per_unit} per unit per day"
+    )
+
+
+@app.command()
+def list_warehouses() -> None:
+    try:
+        warehouses = read_warehouses(WAREHOUSES_FILE)
+    except (OSError, ValueError) as error:
+        typer.echo(f"could not read {WAREHOUSES_FILE}: {error}", err=True)
+        raise typer.Exit(code=1) from None
+    if not warehouses:
+        typer.echo("no warehouses registered")
+        return
+    for warehouse in warehouses:
+        typer.echo(describe_warehouse(warehouse))
 
 
 if __name__ == "__main__":

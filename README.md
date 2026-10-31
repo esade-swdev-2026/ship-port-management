@@ -7,6 +7,9 @@ the ship's capacity, is refused with a clear message.
 Also tracks different docks that ships can stay at. Any invalid input, such as 
 adding 2 docks with the same dock_id is refused clearly. 
 
+Also tracks warehouses (storage areas) for cargo, with how many units each one has
+used and free.
+
 ## Who is this for 
 This project is for port managers to track the activity in their ports, while making sure incoming movement is valid. 
 
@@ -25,7 +28,7 @@ and CI resolve the same ones. When you change a dependency in `pyproject.toml`, 
 
 ## Use
 
-Register a ship and add a dock, then list them:
+Register a ship, add a dock and a warehouse, then list them:
 
 ```bash
 uv run ship-port-management register-vessel MV-ATLAS Atlas 500 --cargo-units 40 --arrival-time 2026-10-18T09:30
@@ -33,6 +36,9 @@ uv run ship-port-management list-vessels
 
 uv run ship-port-management add-dock D1 500 120
 uv run ship-port-management list-docks
+
+uv run ship-port-management add-warehouse W-NORTH 200 1.5
+uv run ship-port-management list-warehouses
 ```
 
 ```
@@ -41,6 +47,9 @@ MV-ATLAS  Atlas  arrived 2026-10-18T09:30  cargo 40/500
 
 Dock D1 successfully added (Max ship size: 500, hourly rate: 120.0)
 Dock id: D1, Max ship size = 500, Hourly rate: 120.0, Status: available
+
+Added warehouse W-NORTH, room for 200 units at 1.5 per unit per day
+W-NORTH  used 0/200  free 200  rate 1.5 per unit per day
 ```
 
 | Command | What it does |
@@ -51,10 +60,13 @@ Dock id: D1, Max ship size = 500, Hourly rate: 120.0, Status: available
 | `list-vessels` | Shows every ship in the port |
 | `add-dock DOCK_ID MAX_SHIP_SIZE HOURLY_RATE` | Adds a dock (max ship size in cargo units, rate per hour) |
 | `list-docks` | Shows every dock and if it is available or occupied |
+| `add-warehouse WAREHOUSE_ID CAPACITY DAILY_RATE_PER_UNIT` | Adds a warehouse (capacity in cargo units, rate per unit per day) |
+| `list-warehouses` | Shows every warehouse with its used and free units |
 | `--help` | Shows all commands and options |
 
 
-Ships are saved in `data/ships.csv` and docks in `data/docks.csv`. Delete the `data` folder to start with an empty port.
+Ships are saved in `data/ships.csv`, docks in `data/docks.csv` and warehouses in
+`data/warehouses.csv`. Delete the `data` folder to start with an empty port.
 
 Bad input is refused with a message and exit code 1, for example cargo over capacity:
 
@@ -86,7 +98,7 @@ src/ship_port_management/   the package
   ships.py                  Ship and the rules for registering one
   docks.py                  Dock and the rules for adding one
   warehouses.py             Warehouse (storage area): capacity, used and free units
-  csv_handling.py           reads and writes data/ships.csv and data/docks.csv
+  csv_handling.py           reads and writes the ships, docks and warehouses CSV files
   __main__.py               lets `python -m ship_port_management` work
 tests/                      pytest tests, one file per module
 pyproject.toml              dependencies and tool configuration, the single source of truth

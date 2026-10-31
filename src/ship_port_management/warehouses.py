@@ -42,3 +42,10 @@ def add_warehouse(new_warehouse: Warehouse, warehouses: list[Warehouse]) -> list
     if is_duplicate_warehouse(new_warehouse.warehouse_id, existing_ids):
         raise ValueError(f"warehouse {new_warehouse.warehouse_id} is already registered")
     return warehouses + [new_warehouse]
+
+
+def describe_warehouse(warehouse: Warehouse) -> str:
+    return (
+        f"{warehouse.warehouse_id}  used {warehouse.stored_units}/{warehouse.capacity}  "
+        f"free {free_units(warehouse)}  rate {warehouse.daily_rate_per_unit} per unit per day"
+    )
