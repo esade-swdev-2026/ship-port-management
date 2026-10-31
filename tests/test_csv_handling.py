@@ -3,13 +3,16 @@ from pathlib import Path
 import pytest
 
 from ship_port_management.csv_handling import (
+    read_dockings,
     read_docks,
     read_ships,
     read_warehouses,
+    write_dockings,
     write_docks,
     write_ships,
     write_warehouses,
 )
+from ship_port_management.dockings import Docking
 from ship_port_management.docks import Dock
 from ship_port_management.ships import Ship
 from ship_port_management.warehouses import Warehouse
@@ -57,3 +60,14 @@ def test_warehouses_written_can_be_read_back(tmp_path: Path) -> None:
 
 def test_missing_file_means_no_warehouses(tmp_path: Path) -> None:
     assert read_warehouses(tmp_path / "missing.csv") == []
+
+
+def test_dockings_written_can_be_read_back(tmp_path: Path) -> None:
+    dockings_file = tmp_path / "data" / "dockings.csv"
+    dockings = [Docking("IMO9074729", "North"), Docking("IMO9012328", "South")]
+    write_dockings(dockings_file, dockings)
+    assert read_dockings(dockings_file) == dockings
+
+
+def test_missing_file_means_no_dockings(tmp_path: Path) -> None:
+    assert read_dockings(tmp_path / "missing.csv") == []

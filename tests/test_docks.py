@@ -1,6 +1,6 @@
 import pytest
 
-from ship_port_management.docks import Dock, add_dock, describe_dock, is_dock_available
+from ship_port_management.docks import Dock, add_dock, describe_dock, find_dock, is_dock_available
 
 
 def test_add_dock_list_not_changed() -> None:
@@ -83,3 +83,13 @@ def test_describe_occupied_dock_says_occupied() -> None:
     dock = Dock(dock_id="AA", max_ship_size=100, hourly_rate=100.0)
     description = describe_dock(dock, occupied_dock_ids={"AA"})
     assert "occupied" in description
+
+
+def test_find_dock_returns_the_matching_dock() -> None:
+    north = Dock(dock_id="North", max_ship_size=500, hourly_rate=120.0)
+    assert find_dock("North", [north]) == north
+
+
+def test_find_unknown_dock_is_refused() -> None:
+    with pytest.raises(ValueError, match="does not exist"):
+        find_dock("Missing", [])

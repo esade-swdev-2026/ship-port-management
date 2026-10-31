@@ -38,3 +38,10 @@ def describe_ship(ship: Ship) -> str:
         f"{ship.ship_id}  {ship.name}  arrived {ship.arrival_time}  "
         f"cargo {ship.cargo_units}/{ship.capacity}"
     )
+
+
+def find_ship(ship_id: str, ships: list[Ship]) -> Ship:
+    for ship in ships:
+        if ship.ship_id == ship_id:
+            return ship
+    raise ValueError(f"ship {ship_id} is not registered")

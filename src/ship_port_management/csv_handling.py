@@ -1,6 +1,7 @@
 import csv
 from pathlib import Path
 
+from ship_port_management.dockings import Docking
 from ship_port_management.docks import Dock
 from ship_port_management.ships import Ship
 from ship_port_management.warehouses import Warehouse
@@ -25,6 +26,11 @@ DAILY_RATE_PER_UNIT = 2
 STORED_UNITS = 3
 WAREHOUSE_HEADER = ["warehouse_id", "capacity", "daily_rate_per_unit", "stored_units"]
 WAREHOUSE_FIELDS_PER_ROW = len(WAREHOUSE_HEADER)
+
+DOCKING_SHIP_ID = 0
+DOCKING_DOCK_ID = 1
+DOCKING_HEADER = ["ship_id", "dock_id"]
+DOCKING_FIELDS_PER_ROW = len(DOCKING_HEADER)
 
 
 def read_ships(path: Path) -> list[Ship]:
@@ -124,3 +130,26 @@ def write_warehouses(path: Path, warehouses: list[Warehouse]) -> None:
                     warehouse.stored_units,
                 ]
             )
+
+
+def read_dockings(path: Path) -> list[Docking]:
+    if not path.exists():
+        return []
+    dockings: list[Docking] = []
+    with path.open(newline="") as handle:
+        reader = csv.reader(handle)
+        next(reader, None)
+        for row in reader:
+            if len(row) != DOCKING_FIELDS_PER_ROW:
+                raise ValueError(f"malformed row in {path}: {row}")
+            dockings.append(Docking(ship_id=row[DOCKING_SHIP_ID], dock_id=row[DOCKING_DOCK_ID]))
+    return dockings
+
+
+def write_dockings(path: Path, dockings: list[Docking]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(DOCKING_HEADER)
+        for docking in dockings:
+            writer.writerow([docking.ship_id, docking.dock_id])
