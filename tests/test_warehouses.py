@@ -113,3 +113,9 @@ def test_describe_warehouse_shows_used_and_free_units() -> None:
     assert describe_warehouse(north_storing(50)) == (
         "W-NORTH  used 50/200  free 150  rate 1.5 per unit per day"
     )
+
+
+@pytest.mark.parametrize("daily_rate_per_unit", [float("nan"), float("inf")])
+def test_non_finite_daily_rate_is_refused(daily_rate_per_unit: float) -> None:
+    with pytest.raises(ValueError, match="positive number"):
+        add_warehouse(north_with_daily_rate(daily_rate_per_unit), [])

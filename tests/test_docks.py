@@ -93,3 +93,10 @@ def test_find_dock_returns_the_matching_dock() -> None:
 def test_find_unknown_dock_is_refused() -> None:
     with pytest.raises(ValueError, match="does not exist"):
         find_dock("Missing", [])
+
+
+@pytest.mark.parametrize("hourly_rate", [float("nan"), float("inf")])
+def test_non_finite_hourly_rate_is_refused(hourly_rate: float) -> None:
+    new_dock = Dock(dock_id="AA", max_ship_size=100, hourly_rate=hourly_rate)
+    with pytest.raises(ValueError, match="finite"):
+        add_dock([], new_dock)

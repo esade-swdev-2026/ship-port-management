@@ -100,3 +100,15 @@ def test_docking_into_an_occupied_dock_fails() -> None:
     result = runner.invoke(app, ["dock-vessel", "MV-NOVA", "D1"])
     assert result.exit_code == 1
     assert "already occupied" in result.output
+
+
+def test_register_vessel_with_invalid_arrival_time_fails() -> None:
+    result = runner.invoke(app, [*REGISTER_ATLAS, "--arrival-time", "banana"])
+    assert result.exit_code == 1
+    assert "arrival time must look like" in result.output
+
+
+def test_add_dock_with_nan_rate_fails_with_message() -> None:
+    result = runner.invoke(app, ["add-dock", "D1", "500", "nan"])
+    assert result.exit_code == 1
+    assert "finite number" in result.output
