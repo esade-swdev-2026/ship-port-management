@@ -8,7 +8,7 @@ def test_add_dock_list_not_changed() -> None:
     new_dock = Dock(dock_id="BB", max_ship_size=100, hourly_rate=100.0)
 
     docks = [existing]
-    add_dock(docks, new_dock)
+    add_dock(new_dock, docks)
     assert docks == [existing]
 
 
@@ -17,13 +17,13 @@ def test_add_dock_successfully() -> None:
     new_dock = Dock(dock_id="BB", max_ship_size=100, hourly_rate=100.0)
 
     docks = [existing]
-    assert add_dock(docks, new_dock) == [existing, new_dock]
+    assert add_dock(new_dock, docks) == [existing, new_dock]
 
 
 def test_add_to_empty_list() -> None:
     new_dock = Dock(dock_id="AA", max_ship_size=100, hourly_rate=100.0)
 
-    assert add_dock([], new_dock) == [new_dock]
+    assert add_dock(new_dock, []) == [new_dock]
 
 
 def test_dock_available_when_none_occupied() -> None:
@@ -37,30 +37,30 @@ def test_duplicate_dock_id_rejected() -> None:
     docks = [existing]
 
     with pytest.raises(ValueError):
-        add_dock(docks, new_dock)
+        add_dock(new_dock, docks)
 
 
 def test_zero_max_ship_size_rejected() -> None:
     new_dock = Dock(dock_id="AA", max_ship_size=0, hourly_rate=100.0)
     with pytest.raises(ValueError):
-        add_dock([], new_dock)
+        add_dock(new_dock, [])
 
 
 def test_negative_max_ship_size_rejected() -> None:
     new_dock = Dock(dock_id="AA", max_ship_size=-100, hourly_rate=100.0)
     with pytest.raises(ValueError):
-        add_dock([], new_dock)
+        add_dock(new_dock, [])
 
 
 def test_zero_hourly_rate_accepted() -> None:
     new_dock = Dock(dock_id="AA", max_ship_size=100, hourly_rate=0)
-    assert add_dock([], new_dock) == [new_dock]
+    assert add_dock(new_dock, []) == [new_dock]
 
 
 def test_negative_hourly_rate_rejected() -> None:
     new_dock = Dock(dock_id="AA", max_ship_size=100, hourly_rate=-100.0)
     with pytest.raises(ValueError):
-        add_dock([], new_dock)
+        add_dock(new_dock, [])
 
 
 def test_occupied_dock_unavailable() -> None:
@@ -99,4 +99,4 @@ def test_find_unknown_dock_is_refused() -> None:
 def test_non_finite_hourly_rate_is_refused(hourly_rate: float) -> None:
     new_dock = Dock(dock_id="AA", max_ship_size=100, hourly_rate=hourly_rate)
     with pytest.raises(ValueError, match="finite"):
-        add_dock([], new_dock)
+        add_dock(new_dock, [])

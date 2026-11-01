@@ -71,7 +71,7 @@ def add_new_dock(dock_id: str, max_ship_size: int, hourly_rate: float) -> None:
     new_dock = Dock(dock_id, max_ship_size, hourly_rate)
     try:
         existing = read_docks(DOCKS_FILE)
-        write_docks(DOCKS_FILE, add_dock(existing, new_dock))
+        write_docks(DOCKS_FILE, add_dock(new_dock, existing))
     except (OSError, ValueError) as error:
         typer.echo(f"could not add dock {dock_id}: {error}", err=True)
         raise typer.Exit(code=1) from None

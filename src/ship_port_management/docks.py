@@ -12,7 +12,7 @@ class Dock:
     hourly_rate: float
 
 
-def add_dock(docks: list[Dock], new_dock: Dock) -> list[Dock]:
+def add_dock(new_dock: Dock, docks: list[Dock]) -> list[Dock]:
     if new_dock.max_ship_size < MIN_SHIP_SIZE:
         raise ValueError(f"Max ship size, {new_dock.max_ship_size}, must be a positive integer.")
 
