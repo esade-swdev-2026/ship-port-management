@@ -9,6 +9,7 @@ from ship_port_management.ships import (
     is_valid_arrival_time,
     register_ship,
     remaining_capacity,
+    replace_ship,
 )
 
 ATLAS_CAPACITY = 500
@@ -117,3 +118,8 @@ def test_ship_with_invalid_arrival_time_is_refused() -> None:
     ship = Ship("IMO9074729", "Atlas", "banana", ATLAS_CAPACITY, 40)
     with pytest.raises(ValueError, match="arrival time"):
         register_ship(ship, [])
+
+
+def test_replace_ship_swaps_only_the_matching_ship() -> None:
+    unloaded_atlas = atlas_carrying(0)
+    assert replace_ship(unloaded_atlas, [ATLAS, NOVA]) == [unloaded_atlas, NOVA]

@@ -112,3 +112,34 @@ def test_add_dock_with_nan_rate_fails_with_message() -> None:
     result = runner.invoke(app, ["add-dock", "D1", "500", "nan"])
     assert result.exit_code == 1
     assert "finite number" in result.output
+
+
+def dock_atlas_next_to_north_warehouse() -> None:
+    runner.invoke(app, REGISTER_ATLAS)
+    runner.invoke(app, ADD_DOCK_D1)
+    runner.invoke(app, DOCK_ATLAS_AT_D1)
+    runner.invoke(app, ADD_NORTH_WAREHOUSE)
+
+
+def test_unload_cargo_moves_units_into_the_warehouse() -> None:
+    dock_atlas_next_to_north_warehouse()
+    result = runner.invoke(app, ["unload-cargo", "MV-ATLAS", "W-NORTH", "30"])
+    assert result.exit_code == 0
+    assert "used 30/200" in runner.invoke(app, ["list-warehouses"]).output
+    assert "cargo 10/500" in runner.invoke(app, ["list-vessels"]).output
+
+
+def test_load_cargo_moves_units_onto_the_ship() -> None:
+    dock_atlas_next_to_north_warehouse()
+    runner.invoke(app, ["unload-cargo", "MV-ATLAS", "W-NORTH", "30"])
+    result = runner.invoke(app, ["load-cargo", "MV-ATLAS", "W-NORTH", "20"])
+    assert result.exit_code == 0
+    assert "used 10/200" in runner.invoke(app, ["list-warehouses"]).output
+
+
+def test_unload_cargo_from_undocked_ship_fails() -> None:
+    runner.invoke(app, REGISTER_ATLAS)
+    runner.invoke(app, ADD_NORTH_WAREHOUSE)
+    result = runner.invoke(app, ["unload-cargo", "MV-ATLAS", "W-NORTH", "10"])
+    assert result.exit_code == 1
+    assert "not docked" in result.output

@@ -52,3 +52,17 @@ def describe_warehouse(warehouse: Warehouse) -> str:
         f"{warehouse.warehouse_id}  used {warehouse.stored_units}/{warehouse.capacity}  "
         f"free {free_units(warehouse)}  rate {warehouse.daily_rate_per_unit} per unit per day"
     )
+
+
+def find_warehouse(warehouse_id: str, warehouses: list[Warehouse]) -> Warehouse:
+    for warehouse in warehouses:
+        if warehouse.warehouse_id == warehouse_id:
+            return warehouse
+    raise ValueError(f"warehouse {warehouse_id} does not exist")
+
+
+def replace_warehouse(updated_warehouse: Warehouse, warehouses: list[Warehouse]) -> list[Warehouse]:
+    return [
+        updated_warehouse if warehouse.warehouse_id == updated_warehouse.warehouse_id else warehouse
+        for warehouse in warehouses
+    ]

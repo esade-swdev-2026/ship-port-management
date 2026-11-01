@@ -58,3 +58,7 @@ def find_ship(ship_id: str, ships: list[Ship]) -> Ship:
         if ship.ship_id == ship_id:
             return ship
     raise ValueError(f"ship {ship_id} is not registered")
+
+
+def replace_ship(updated_ship: Ship, ships: list[Ship]) -> list[Ship]:
+    return [updated_ship if ship.ship_id == updated_ship.ship_id else ship for ship in ships]

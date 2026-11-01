@@ -4,8 +4,10 @@ from ship_port_management.warehouses import (
     Warehouse,
     add_warehouse,
     describe_warehouse,
+    find_warehouse,
     free_units,
     is_duplicate_warehouse,
+    replace_warehouse,
     stored_within_capacity,
 )
 
@@ -119,3 +121,17 @@ def test_describe_warehouse_shows_used_and_free_units() -> None:
 def test_non_finite_daily_rate_is_refused(daily_rate_per_unit: float) -> None:
     with pytest.raises(ValueError, match="positive number"):
         add_warehouse(north_with_daily_rate(daily_rate_per_unit), [])
+
+
+def test_find_warehouse_returns_the_matching_warehouse() -> None:
+    assert find_warehouse("W-SOUTH", [NORTH, SOUTH]) == SOUTH
+
+
+def test_find_unknown_warehouse_is_refused() -> None:
+    with pytest.raises(ValueError, match="does not exist"):
+        find_warehouse("W-MISSING", [NORTH])
+
+
+def test_replace_warehouse_swaps_only_the_matching_warehouse() -> None:
+    fuller_north = north_storing(50)
+    assert replace_warehouse(fuller_north, [NORTH, SOUTH]) == [fuller_north, SOUTH]

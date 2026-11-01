@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer
 
-from ship_port_management import dockings, docks, ships, warehouses
+from ship_port_management import cargo, dockings, docks, ships, warehouses
 from ship_port_management.csv_handling import (
     read_dockings,
     read_docks,
@@ -129,6 +129,53 @@ def list_warehouses() -> None:
         return
     for warehouse in registered_warehouses:
         typer.echo(warehouses.describe_warehouse(warehouse))
+
+
+def save_cargo_move(
+    move: cargo.CargoMove,
+    registered_ships: list[ships.Ship],
+    registered_warehouses: list[warehouses.Warehouse],
+) -> None:
+    write_ships(SHIPS_FILE, ships.replace_ship(move.ship, registered_ships))
+    write_warehouses(
+        WAREHOUSES_FILE, warehouses.replace_warehouse(move.warehouse, registered_warehouses)
+    )
+
+
+@app.command()
+def unload_cargo(ship_id: str, warehouse_id: str, units: int) -> None:
+    try:
+        registered_ships = read_ships(SHIPS_FILE)
+        registered_warehouses = read_warehouses(WAREHOUSES_FILE)
+        move = cargo.unload_cargo(
+            ships.find_ship(ship_id, registered_ships),
+            warehouses.find_warehouse(warehouse_id, registered_warehouses),
+            units,
+            read_dockings(DOCKINGS_FILE),
+        )
+        save_cargo_move(move, registered_ships, registered_warehouses)
+    except (OSError, ValueError) as error:
+        typer.echo(f"could not unload {ship_id}: {error}", err=True)
+        raise typer.Exit(code=1) from None
+    typer.echo(f"Unloaded {units} units from {ship_id} into {warehouse_id}")
+
+
+@app.command()
+def load_cargo(ship_id: str, warehouse_id: str, units: int) -> None:
+    try:
+        registered_ships = read_ships(SHIPS_FILE)
+        registered_warehouses = read_warehouses(WAREHOUSES_FILE)
+        move = cargo.load_cargo(
+            ships.find_ship(ship_id, registered_ships),
+            warehouses.find_warehouse(warehouse_id, registered_warehouses),
+            units,
+            read_dockings(DOCKINGS_FILE),
+        )
+        save_cargo_move(move, registered_ships, registered_warehouses)
+    except (OSError, ValueError) as error:
+        typer.echo(f"could not load {ship_id}: {error}", err=True)
+        raise typer.Exit(code=1) from None
+    typer.echo(f"Loaded {units} units from {warehouse_id} onto {ship_id}")
 
 
 if __name__ == "__main__":
