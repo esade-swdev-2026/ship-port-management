@@ -9,7 +9,8 @@ adding 2 docks with the same dock_id is refused clearly. A ship can be docked at
 free dock that is big enough for it, and a dock never holds two ships at once.
 
 Also tracks warehouses (storage areas) for cargo, with how many units each one has
-used and free.
+used and free. A docked ship can unload cargo into a warehouse or load cargo from
+one, never more than the ship carries, the warehouse holds, or either has room for.
 
 ## Who is this for 
 This project is for port managers to track the activity in their ports, while making sure incoming movement is valid. 
@@ -29,7 +30,7 @@ and CI resolve the same ones. When you change a dependency in `pyproject.toml`, 
 
 ## Use
 
-Register a ship, add a dock, dock the ship there, add a warehouse, then list them:
+Register a ship, dock it, add a warehouse, then move cargo between them:
 
 ```bash
 uv run ship-port-management register-vessel MV-ATLAS Atlas 500 --cargo-units 40 --arrival-time 2026-10-18T09:30
@@ -40,6 +41,8 @@ uv run ship-port-management dock-vessel MV-ATLAS D1
 uv run ship-port-management list-docks
 
 uv run ship-port-management add-warehouse W-NORTH 200 1.5
+uv run ship-port-management unload-cargo MV-ATLAS W-NORTH 30
+uv run ship-port-management load-cargo MV-ATLAS W-NORTH 10
 uv run ship-port-management list-warehouses
 ```
 
@@ -52,7 +55,9 @@ Docked MV-ATLAS at D1
 Dock id: D1, Max ship size = 500, Hourly rate: 120.0, Status: occupied
 
 Added warehouse W-NORTH, room for 200 units at 1.5 per unit per day
-W-NORTH  used 0/200  free 200  rate 1.5 per unit per day
+Unloaded 30 units from MV-ATLAS into W-NORTH
+Loaded 10 units from W-NORTH onto MV-ATLAS
+W-NORTH  used 20/200  free 180  rate 1.5 per unit per day
 ```
 
 | Command | What it does |
@@ -66,6 +71,8 @@ W-NORTH  used 0/200  free 200  rate 1.5 per unit per day
 | `list-docks` | Shows every dock and if it is available or occupied |
 | `add-warehouse WAREHOUSE_ID CAPACITY DAILY_RATE_PER_UNIT` | Adds a warehouse (capacity in cargo units, rate per unit per day) |
 | `list-warehouses` | Shows every warehouse with its used and free units |
+| `unload-cargo SHIP_ID WAREHOUSE_ID UNITS` | Moves cargo from a docked ship into a warehouse |
+| `load-cargo SHIP_ID WAREHOUSE_ID UNITS` | Moves cargo from a warehouse onto a docked ship |
 | `--help` | Shows all commands and options |
 
 
@@ -102,6 +109,7 @@ src/ship_port_management/   the package
   ships.py                  Ship and the rules for registering one
   docks.py                  Dock and the rules for adding one
   dockings.py               Docking a ship: size check, no double booking
+  cargo.py                  Loading and unloading cargo between docked ships and warehouses
   warehouses.py             Warehouse (storage area): capacity, used and free units
   csv_handling.py           reads and writes the ships, docks, dockings and warehouses CSV files
   __main__.py               lets `python -m ship_port_management` work

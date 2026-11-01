@@ -3,6 +3,7 @@ from pathlib import Path
 
 import typer
 
+from ship_port_management import cargo, dockings, docks, ships, warehouses
 from ship_port_management.csv_handling import (
     read_dockings,
     read_docks,
@@ -13,18 +14,8 @@ from ship_port_management.csv_handling import (
     write_ships,
     write_warehouses,
 )
-from ship_port_management.dockings import dock_ship, occupied_dock_ids
-from ship_port_management.docks import Dock, add_dock, describe_dock, find_dock
-from ship_port_management.ships import (
-    Ship,
-    describe_ship,
-    find_ship,
-    register_ship,
-    remaining_capacity,
-)
-from ship_port_management.warehouses import Warehouse, add_warehouse, describe_warehouse
 
-DATA_FILE = Path("data") / "ships.csv"
+SHIPS_FILE = Path("data") / "ships.csv"
 DOCKS_FILE = Path("data") / "docks.csv"
 WAREHOUSES_FILE = Path("data") / "warehouses.csv"
 DOCKINGS_FILE = Path("data") / "dockings.csv"
@@ -41,37 +32,37 @@ def register_vessel(
     ship_id: str, name: str, capacity: int, cargo_units: int = 0, arrival_time: str = ""
 ) -> None:
     arrival = arrival_time or datetime.now().isoformat(timespec="minutes")
-    new_ship = Ship(ship_id, name, arrival, capacity, cargo_units)
+    new_ship = ships.Ship(ship_id, name, arrival, capacity, cargo_units)
     try:
-        registered = read_ships(DATA_FILE)
-        write_ships(DATA_FILE, register_ship(new_ship, registered))
+        registered_ships = read_ships(SHIPS_FILE)
+        write_ships(SHIPS_FILE, ships.register_ship(new_ship, registered_ships))
     except (OSError, ValueError) as error:
         typer.echo(f"could not register {ship_id}: {error}", err=True)
         raise typer.Exit(code=1) from None
-    room = remaining_capacity(new_ship)
+    room = ships.remaining_capacity(new_ship)
     typer.echo(f"Registered {ship_id} ({name}), room for {room} more units")
 
 
 @app.command()
 def list_vessels() -> None:
     try:
-        ships = read_ships(DATA_FILE)
+        registered_ships = read_ships(SHIPS_FILE)
     except (OSError, ValueError) as error:
-        typer.echo(f"could not read {DATA_FILE}: {error}", err=True)
+        typer.echo(f"could not read {SHIPS_FILE}: {error}", err=True)
         raise typer.Exit(code=1) from None
-    if not ships:
+    if not registered_ships:
         typer.echo("no ships registered")
         return
-    for ship in ships:
-        typer.echo(describe_ship(ship))
+    for ship in registered_ships:
+        typer.echo(ships.describe_ship(ship))
 
 
-@app.command(name="add-dock")
-def add_new_dock(dock_id: str, max_ship_size: int, hourly_rate: float) -> None:
-    new_dock = Dock(dock_id, max_ship_size, hourly_rate)
+@app.command()
+def add_dock(dock_id: str, max_ship_size: int, hourly_rate: float) -> None:
+    new_dock = docks.Dock(dock_id, max_ship_size, hourly_rate)
     try:
-        existing = read_docks(DOCKS_FILE)
-        write_docks(DOCKS_FILE, add_dock(existing, new_dock))
+        registered_docks = read_docks(DOCKS_FILE)
+        write_docks(DOCKS_FILE, docks.add_dock(new_dock, registered_docks))
     except (OSError, ValueError) as error:
         typer.echo(f"could not add dock {dock_id}: {error}", err=True)
         raise typer.Exit(code=1) from None
@@ -84,37 +75,39 @@ def add_new_dock(dock_id: str, max_ship_size: int, hourly_rate: float) -> None:
 @app.command()
 def list_docks() -> None:
     try:
-        docks = read_docks(DOCKS_FILE)
-        occupied = occupied_dock_ids(read_dockings(DOCKINGS_FILE))
+        registered_docks = read_docks(DOCKS_FILE)
+        occupied = dockings.occupied_dock_ids(read_dockings(DOCKINGS_FILE))
     except (OSError, ValueError) as error:
         typer.echo(f"could not read the dock files: {error}", err=True)
         raise typer.Exit(code=1) from None
-    if not docks:
+    if not registered_docks:
         typer.echo("no docks registered")
         return
-    for dock in docks:
-        typer.echo(describe_dock(dock, occupied))
+    for dock in registered_docks:
+        typer.echo(docks.describe_dock(dock, occupied))
 
 
 @app.command()
 def dock_vessel(ship_id: str, dock_id: str) -> None:
     try:
-        ship = find_ship(ship_id, read_ships(DATA_FILE))
-        dock = find_dock(dock_id, read_docks(DOCKS_FILE))
-        dockings = read_dockings(DOCKINGS_FILE)
-        write_dockings(DOCKINGS_FILE, dock_ship(ship, dock, dockings))
+        ship = ships.find_ship(ship_id, read_ships(SHIPS_FILE))
+        dock = docks.find_dock(dock_id, read_docks(DOCKS_FILE))
+        current_dockings = read_dockings(DOCKINGS_FILE)
+        write_dockings(DOCKINGS_FILE, dockings.dock_ship(ship, dock, current_dockings))
     except (OSError, ValueError) as error:
         typer.echo(f"could not dock {ship_id}: {error}", err=True)
         raise typer.Exit(code=1) from None
     typer.echo(f"Docked {ship_id} at {dock_id}")
 
 
-@app.command(name="add-warehouse")
-def add_new_warehouse(warehouse_id: str, capacity: int, daily_rate_per_unit: float) -> None:
-    new_warehouse = Warehouse(warehouse_id, capacity, daily_rate_per_unit)
+@app.command()
+def add_warehouse(warehouse_id: str, capacity: int, daily_rate_per_unit: float) -> None:
+    new_warehouse = warehouses.Warehouse(warehouse_id, capacity, daily_rate_per_unit)
     try:
-        existing = read_warehouses(WAREHOUSES_FILE)
-        write_warehouses(WAREHOUSES_FILE, add_warehouse(new_warehouse, existing))
+        registered_warehouses = read_warehouses(WAREHOUSES_FILE)
+        write_warehouses(
+            WAREHOUSES_FILE, warehouses.add_warehouse(new_warehouse, registered_warehouses)
+        )
     except (OSError, ValueError) as error:
         typer.echo(f"could not add warehouse {warehouse_id}: {error}", err=True)
         raise typer.Exit(code=1) from None
@@ -127,15 +120,62 @@ def add_new_warehouse(warehouse_id: str, capacity: int, daily_rate_per_unit: flo
 @app.command()
 def list_warehouses() -> None:
     try:
-        warehouses = read_warehouses(WAREHOUSES_FILE)
+        registered_warehouses = read_warehouses(WAREHOUSES_FILE)
     except (OSError, ValueError) as error:
         typer.echo(f"could not read {WAREHOUSES_FILE}: {error}", err=True)
         raise typer.Exit(code=1) from None
-    if not warehouses:
+    if not registered_warehouses:
         typer.echo("no warehouses registered")
         return
-    for warehouse in warehouses:
-        typer.echo(describe_warehouse(warehouse))
+    for warehouse in registered_warehouses:
+        typer.echo(warehouses.describe_warehouse(warehouse))
+
+
+def save_cargo_move(
+    move: cargo.CargoMove,
+    registered_ships: list[ships.Ship],
+    registered_warehouses: list[warehouses.Warehouse],
+) -> None:
+    write_ships(SHIPS_FILE, ships.replace_ship(move.ship, registered_ships))
+    write_warehouses(
+        WAREHOUSES_FILE, warehouses.replace_warehouse(move.warehouse, registered_warehouses)
+    )
+
+
+@app.command()
+def unload_cargo(ship_id: str, warehouse_id: str, units: int) -> None:
+    try:
+        registered_ships = read_ships(SHIPS_FILE)
+        registered_warehouses = read_warehouses(WAREHOUSES_FILE)
+        move = cargo.unload_cargo(
+            ships.find_ship(ship_id, registered_ships),
+            warehouses.find_warehouse(warehouse_id, registered_warehouses),
+            units,
+            read_dockings(DOCKINGS_FILE),
+        )
+        save_cargo_move(move, registered_ships, registered_warehouses)
+    except (OSError, ValueError) as error:
+        typer.echo(f"could not unload {ship_id}: {error}", err=True)
+        raise typer.Exit(code=1) from None
+    typer.echo(f"Unloaded {units} units from {ship_id} into {warehouse_id}")
+
+
+@app.command()
+def load_cargo(ship_id: str, warehouse_id: str, units: int) -> None:
+    try:
+        registered_ships = read_ships(SHIPS_FILE)
+        registered_warehouses = read_warehouses(WAREHOUSES_FILE)
+        move = cargo.load_cargo(
+            ships.find_ship(ship_id, registered_ships),
+            warehouses.find_warehouse(warehouse_id, registered_warehouses),
+            units,
+            read_dockings(DOCKINGS_FILE),
+        )
+        save_cargo_move(move, registered_ships, registered_warehouses)
+    except (OSError, ValueError) as error:
+        typer.echo(f"could not load {ship_id}: {error}", err=True)
+        raise typer.Exit(code=1) from None
+    typer.echo(f"Loaded {units} units from {warehouse_id} onto {ship_id}")
 
 
 if __name__ == "__main__":

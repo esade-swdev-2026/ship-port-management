@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass
 
 MIN_SHIP_SIZE = 1
@@ -11,9 +12,12 @@ class Dock:
     hourly_rate: float
 
 
-def add_dock(docks: list[Dock], new_dock: Dock) -> list[Dock]:
+def add_dock(new_dock: Dock, docks: list[Dock]) -> list[Dock]:
     if new_dock.max_ship_size < MIN_SHIP_SIZE:
         raise ValueError(f"Max ship size, {new_dock.max_ship_size}, must be a positive integer.")
+
+    if not math.isfinite(new_dock.hourly_rate):
+        raise ValueError(f"Hourly rate, {new_dock.hourly_rate}, must be a finite number.")
 
     if new_dock.hourly_rate < MIN_HOURLY_RATE:
         raise ValueError(f"Hourly rate, {new_dock.hourly_rate}, can not be negative.")

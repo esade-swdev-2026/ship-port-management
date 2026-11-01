@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass
 
 
@@ -14,7 +15,7 @@ def is_valid_storage_capacity(capacity: int) -> bool:
 
 
 def is_valid_daily_rate(daily_rate_per_unit: float) -> bool:
-    return daily_rate_per_unit > 0
+    return math.isfinite(daily_rate_per_unit) and daily_rate_per_unit > 0
 
 
 def stored_within_capacity(warehouse: Warehouse) -> bool:
@@ -33,7 +34,9 @@ def add_warehouse(new_warehouse: Warehouse, warehouses: list[Warehouse]) -> list
     if not is_valid_storage_capacity(new_warehouse.capacity):
         raise ValueError(f"capacity must be positive, got {new_warehouse.capacity}")
     if not is_valid_daily_rate(new_warehouse.daily_rate_per_unit):
-        raise ValueError(f"daily rate must be positive, got {new_warehouse.daily_rate_per_unit}")
+        raise ValueError(
+            f"daily rate must be a positive number, got {new_warehouse.daily_rate_per_unit}"
+        )
     if not stored_within_capacity(new_warehouse):
         raise ValueError(
             f"stored units must be between 0 and capacity, got {new_warehouse.stored_units}"
@@ -49,3 +52,17 @@ def describe_warehouse(warehouse: Warehouse) -> str:
         f"{warehouse.warehouse_id}  used {warehouse.stored_units}/{warehouse.capacity}  "
         f"free {free_units(warehouse)}  rate {warehouse.daily_rate_per_unit} per unit per day"
     )
+
+
+def find_warehouse(warehouse_id: str, warehouses: list[Warehouse]) -> Warehouse:
+    for warehouse in warehouses:
+        if warehouse.warehouse_id == warehouse_id:
+            return warehouse
+    raise ValueError(f"warehouse {warehouse_id} does not exist")
+
+
+def replace_warehouse(updated_warehouse: Warehouse, warehouses: list[Warehouse]) -> list[Warehouse]:
+    return [
+        updated_warehouse if warehouse.warehouse_id == updated_warehouse.warehouse_id else warehouse
+        for warehouse in warehouses
+    ]
