@@ -5,7 +5,8 @@ from ship_port_management.dockings import Docking
 from ship_port_management.ships import Ship
 from ship_port_management.warehouses import Warehouse
 
-ATLAS_DOCKED = [Docking("IMO9074729", "North")]
+DOCKED_AT = "2026-10-14T12:00"
+ATLAS_DOCKED = [Docking("IMO9074729", "North", DOCKED_AT)]
 
 
 def atlas_carrying(cargo_units: int) -> Ship:
