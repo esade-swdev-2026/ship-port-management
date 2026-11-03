@@ -73,6 +73,7 @@ W-NORTH  used 20/200  free 180  rate 1.5 per unit per day
 | `list-warehouses` | Shows every warehouse with its used and free units |
 | `unload-cargo SHIP_ID WAREHOUSE_ID UNITS` | Moves cargo from a docked ship into a warehouse |
 | `load-cargo SHIP_ID WAREHOUSE_ID UNITS` | Moves cargo from a warehouse onto a docked ship |
+| `port-status` | Shows every ship and its dock, the free docks and how full each warehouse is |
 | `--help` | Shows all commands and options |
 
 
