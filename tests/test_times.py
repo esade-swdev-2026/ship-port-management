@@ -15,3 +15,7 @@ def test_empty_text_is_not_a_valid_time() -> None:
 
 def test_impossible_date_is_not_a_valid_time() -> None:
     assert not is_valid_iso_time("2026-13-01T09:30")
+
+
+def test_time_with_timezone_is_not_a_valid_time() -> None:
+    assert not is_valid_iso_time("2026-10-18T10:00+01:00")
