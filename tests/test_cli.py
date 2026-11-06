@@ -165,4 +165,4 @@ def test_port_status_with_corrupt_warehouse_file_fails_cleanly() -> None:
     Path("data/warehouses.csv").write_text("warehouse_id,capacity,daily_rate,stored\nW1,0,1.5,0\n")
     result = runner.invoke(app, ["port-status"])
     assert result.exit_code == 1
-    assert "capacity of 0" in result.output
+    assert "has capacity 0" in result.output

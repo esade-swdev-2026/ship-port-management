@@ -23,10 +23,13 @@ def available_docks(docks: list[Dock], occupied: set[str]) -> list[Dock]:
 
 
 def fill_percentage(warehouse: Warehouse) -> float:
-    if not is_valid_storage_capacity(warehouse.capacity) or not stored_within_capacity(warehouse):
+    name = warehouse.warehouse_id
+    if not is_valid_storage_capacity(warehouse.capacity):
+        raise ValueError(f"warehouse {name} has capacity {warehouse.capacity}, it must be positive")
+    if not stored_within_capacity(warehouse):
         raise ValueError(
-            f"warehouse {warehouse.warehouse_id} holds {warehouse.stored_units} units "
-            f"with a capacity of {warehouse.capacity}"
+            f"warehouse {name} holds {warehouse.stored_units} units "
+            f"but its capacity is {warehouse.capacity}"
         )
     return warehouse.stored_units / warehouse.capacity * PERCENT
 

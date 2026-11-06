@@ -49,12 +49,12 @@ def test_fill_percentage_of_empty_warehouse_is_zero() -> None:
 
 
 def test_zero_capacity_warehouse_is_refused() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="must be positive"):
         fill_percentage(Warehouse("W3", 0, 1.5))
 
 
 def test_overfull_warehouse_is_refused() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="but its capacity is"):
         fill_percentage(Warehouse("W3", WAREHOUSE_CAPACITY, 1.5, WAREHOUSE_CAPACITY + 1))
 
 
