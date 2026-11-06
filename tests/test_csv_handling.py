@@ -6,15 +6,18 @@ from ship_port_management.csv_handling import (
     read_dockings,
     read_docks,
     read_ships,
+    read_stored_cargo,
     read_warehouses,
     write_dockings,
     write_docks,
     write_ships,
+    write_stored_cargo,
     write_warehouses,
 )
 from ship_port_management.dockings import Docking
 from ship_port_management.docks import Dock
 from ship_port_management.ships import Ship
+from ship_port_management.storage import StoredCargo
 from ship_port_management.warehouses import Warehouse
 
 ATLAS = Ship("IMO9074729", "Atlas", "2026-10-14T09:30", 500, 40)
@@ -74,3 +77,17 @@ def test_dockings_written_can_be_read_back(tmp_path: Path) -> None:
 
 def test_missing_file_means_no_dockings(tmp_path: Path) -> None:
     assert read_dockings(tmp_path / "missing.csv") == []
+
+
+def test_stored_cargo_written_can_be_read_back(tmp_path: Path) -> None:
+    stored_cargo_file = tmp_path / "data" / "stored_cargo.csv"
+    stored = [
+        StoredCargo("IMO9074729", "W-NORTH", 30, "2026-10-14T09:30"),
+        StoredCargo("IMO9012328", "W-SOUTH", 10, "2026-10-15T12:00"),
+    ]
+    write_stored_cargo(stored_cargo_file, stored)
+    assert read_stored_cargo(stored_cargo_file) == stored
+
+
+def test_missing_file_means_no_stored_cargo(tmp_path: Path) -> None:
+    assert read_stored_cargo(tmp_path / "missing.csv") == []
