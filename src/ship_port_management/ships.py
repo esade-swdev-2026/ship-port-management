@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from datetime import datetime
+
+from ship_port_management.times import is_valid_iso_time
 
 
 @dataclass(frozen=True)
@@ -9,14 +10,6 @@ class Ship:
     arrival_time: str  # ISO text, e.g. "2026-10-14T09:30"
     capacity: int
     cargo_units: int
-
-
-def is_valid_arrival_time(arrival_time: str) -> bool:
-    try:
-        datetime.fromisoformat(arrival_time)
-    except ValueError:
-        return False
-    return True
 
 
 def cargo_within_capacity(ship: Ship) -> bool:
@@ -39,7 +32,7 @@ def register_ship(new_ship: Ship, registered: list[Ship]) -> list[Ship]:
         raise ValueError("capacity must be positive")
     if not cargo_within_capacity(new_ship):
         raise ValueError("cargo units must be between 0 and capacity")
-    if not is_valid_arrival_time(new_ship.arrival_time):
+    if not is_valid_iso_time(new_ship.arrival_time):
         raise ValueError(
             f"arrival time must look like 2026-10-18T09:30, got {new_ship.arrival_time}"
         )

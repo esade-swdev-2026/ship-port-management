@@ -68,6 +68,7 @@ W-NORTH  used 20/200  free 180  rate 1.5 per unit per day
 | `list-vessels` | Shows every ship in the port |
 | `add-dock DOCK_ID MAX_SHIP_SIZE HOURLY_RATE` | Adds a dock (max ship size in cargo units, rate per hour) |
 | `dock-vessel SHIP_ID DOCK_ID` | Docks a registered ship at a free dock that fits its size |
+| ⁠ --docked-at TIME ⁠ | When it docked, e.g. ⁠ 2026-11-03T10:00 ⁠ (default now); not before the ship's arrival |
 | `list-docks` | Shows every dock and if it is available or occupied |
 | `add-warehouse WAREHOUSE_ID CAPACITY DAILY_RATE_PER_UNIT` | Adds a warehouse (capacity in cargo units, rate per unit per day) |
 | `list-warehouses` | Shows every warehouse with its used and free units |

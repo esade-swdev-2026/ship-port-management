@@ -102,6 +102,14 @@ def test_docking_into_an_occupied_dock_fails() -> None:
     assert "already occupied" in result.output
 
 
+def test_docking_with_invalid_time_fails_with_message() -> None:
+    runner.invoke(app, REGISTER_ATLAS)
+    runner.invoke(app, ADD_DOCK_D1)
+    result = runner.invoke(app, [*DOCK_ATLAS_AT_D1, "--docked-at", "banana"])
+    assert result.exit_code == 1
+    assert "docking time" in result.output
+
+
 def test_register_vessel_with_invalid_arrival_time_fails() -> None:
     result = runner.invoke(app, [*REGISTER_ATLAS, "--arrival-time", "banana"])
     assert result.exit_code == 1
