@@ -33,6 +33,9 @@ def take_cargo(
     ship_id: str, warehouse_id: str, units: int, stored: list[StoredCargo]
 ) -> list[StoredCargo]:
     """Takes the ship's own cargo first, oldest first, then other ships' cargo, oldest first."""
+    recorded_units = sum(cargo.units for cargo in stored if cargo.warehouse_id == warehouse_id)
+    if units > recorded_units:
+        raise ValueError(f"warehouse {warehouse_id} has only {recorded_units} units on record")
     pickup_order = sorted(
         (index for index, cargo in enumerate(stored) if cargo.warehouse_id == warehouse_id),
         key=lambda index: (
@@ -71,4 +74,4 @@ def fees_by_ship(
 
 
 def describe_storage_fee(ship_id: str, fee: float) -> str:
-    return f"{ship_id}  owes {fee:.2f} for storage"
+    return f"{ship_id} owes {fee:.2f} for storage"

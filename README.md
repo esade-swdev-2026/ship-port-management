@@ -61,7 +61,7 @@ Added warehouse W-NORTH, room for 200 units at 1.5 per unit per day
 Unloaded 30 units from MV-ATLAS into W-NORTH
 Loaded 10 units from W-NORTH onto MV-ATLAS
 W-NORTH  used 20/200  free 180  rate 1.5 per unit per day
-MV-ATLAS  owes 60.00 for storage
+MV-ATLAS owes 60.00 for storage
 ```
 
 | Command | What it does |

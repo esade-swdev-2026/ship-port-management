@@ -157,7 +157,7 @@ def test_storage_fees_charge_unloaded_cargo_after_the_free_period() -> None:
     runner.invoke(app, unload)
     result = runner.invoke(app, ["storage-fees", "--as-of", "2026-10-23T10:00"])
     assert result.exit_code == 0
-    assert "MV-ATLAS  owes 90.00 for storage" in result.output
+    assert "MV-ATLAS owes 90.00 for storage" in result.output
 
 
 def test_loaded_cargo_is_no_longer_charged() -> None:

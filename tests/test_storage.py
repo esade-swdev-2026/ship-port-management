@@ -54,6 +54,11 @@ def test_take_cargo_leaves_other_warehouses_alone() -> None:
     assert remaining == [in_south]
 
 
+def test_take_cargo_more_than_on_record_is_refused() -> None:
+    with pytest.raises(ValueError, match="only 30 units on record"):
+        take_cargo("MV-ATLAS", "W-NORTH", 31, [ATLAS_IN_NORTH])
+
+
 def test_no_days_charged_within_the_free_period() -> None:
     assert chargeable_days(ATLAS_IN_NORTH, datetime(2026, 10, 17, 9, 30)) == 0
 
@@ -80,4 +85,4 @@ def test_fees_with_invalid_time_are_refused() -> None:
 
 
 def test_describe_storage_fee_shows_two_decimals() -> None:
-    assert describe_storage_fee("MV-ATLAS", 90) == "MV-ATLAS  owes 90.00 for storage"
+    assert describe_storage_fee("MV-ATLAS", 90) == "MV-ATLAS owes 90.00 for storage"
