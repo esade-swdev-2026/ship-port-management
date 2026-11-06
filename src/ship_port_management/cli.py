@@ -3,15 +3,17 @@ from pathlib import Path
 
 import typer
 
-from ship_port_management import cargo, dockings, docks, ships, warehouses
+from ship_port_management import cargo, dockings, docks, ships, storage, warehouses
 from ship_port_management.csv_handling import (
     read_dockings,
     read_docks,
     read_ships,
+    read_stored_cargo,
     read_warehouses,
     write_dockings,
     write_docks,
     write_ships,
+    write_stored_cargo,
     write_warehouses,
 )
 
@@ -19,6 +21,7 @@ SHIPS_FILE = Path("data") / "ships.csv"
 DOCKS_FILE = Path("data") / "docks.csv"
 WAREHOUSES_FILE = Path("data") / "warehouses.csv"
 DOCKINGS_FILE = Path("data") / "dockings.csv"
+STORED_CARGO_FILE = Path("data") / "stored_cargo.csv"
 app = typer.Typer(help="Track ships, docks and cargo in a port.")
 
 
@@ -135,15 +138,18 @@ def save_cargo_move(
     move: cargo.CargoMove,
     registered_ships: list[ships.Ship],
     registered_warehouses: list[warehouses.Warehouse],
+    stored_cargo: list[storage.StoredCargo],
 ) -> None:
     write_ships(SHIPS_FILE, ships.replace_ship(move.ship, registered_ships))
     write_warehouses(
         WAREHOUSES_FILE, warehouses.replace_warehouse(move.warehouse, registered_warehouses)
     )
+    write_stored_cargo(STORED_CARGO_FILE, stored_cargo)
 
 
 @app.command()
-def unload_cargo(ship_id: str, warehouse_id: str, units: int) -> None:
+def unload_cargo(ship_id: str, warehouse_id: str, units: int, stored_at: str = "") -> None:
+    storage_time = stored_at or datetime.now().isoformat(timespec="minutes")
     try:
         registered_ships = read_ships(SHIPS_FILE)
         registered_warehouses = read_warehouses(WAREHOUSES_FILE)
@@ -153,7 +159,9 @@ def unload_cargo(ship_id: str, warehouse_id: str, units: int) -> None:
             units,
             read_dockings(DOCKINGS_FILE),
         )
-        save_cargo_move(move, registered_ships, registered_warehouses)
+        new_cargo = storage.StoredCargo(ship_id, warehouse_id, units, storage_time)
+        stored_cargo = storage.store_cargo(new_cargo, read_stored_cargo(STORED_CARGO_FILE))
+        save_cargo_move(move, registered_ships, registered_warehouses, stored_cargo)
     except (OSError, ValueError) as error:
         typer.echo(f"could not unload {ship_id}: {error}", err=True)
         raise typer.Exit(code=1) from None
@@ -171,11 +179,31 @@ def load_cargo(ship_id: str, warehouse_id: str, units: int) -> None:
             units,
             read_dockings(DOCKINGS_FILE),
         )
-        save_cargo_move(move, registered_ships, registered_warehouses)
+        stored_cargo = storage.take_cargo(
+            ship_id, warehouse_id, units, read_stored_cargo(STORED_CARGO_FILE)
+        )
+        save_cargo_move(move, registered_ships, registered_warehouses, stored_cargo)
     except (OSError, ValueError) as error:
         typer.echo(f"could not load {ship_id}: {error}", err=True)
         raise typer.Exit(code=1) from None
     typer.echo(f"Loaded {units} units from {warehouse_id} onto {ship_id}")
+
+
+@app.command()
+def storage_fees(as_of: str = "") -> None:
+    fee_time = as_of or datetime.now().isoformat(timespec="minutes")
+    try:
+        fees = storage.fees_by_ship(
+            read_stored_cargo(STORED_CARGO_FILE), read_warehouses(WAREHOUSES_FILE), fee_time
+        )
+    except (OSError, ValueError) as error:
+        typer.echo(f"could not calculate storage fees: {error}", err=True)
+        raise typer.Exit(code=1) from None
+    if not fees:
+        typer.echo("no cargo in storage")
+        return
+    for ship_id, fee in fees.items():
+        typer.echo(storage.describe_storage_fee(ship_id, fee))
 
 
 if __name__ == "__main__":

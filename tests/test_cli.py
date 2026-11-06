@@ -143,3 +143,43 @@ def test_unload_cargo_from_undocked_ship_fails() -> None:
     result = runner.invoke(app, ["unload-cargo", "MV-ATLAS", "W-NORTH", "10"])
     assert result.exit_code == 1
     assert "not docked" in result.output
+
+
+def test_storage_fees_with_no_cargo_stored() -> None:
+    result = runner.invoke(app, ["storage-fees"])
+    assert result.exit_code == 0
+    assert "no cargo in storage" in result.output
+
+
+def test_storage_fees_charge_unloaded_cargo_after_the_free_period() -> None:
+    dock_atlas_next_to_north_warehouse()
+    unload = ["unload-cargo", "MV-ATLAS", "W-NORTH", "30", "--stored-at", "2026-10-18T10:00"]
+    runner.invoke(app, unload)
+    result = runner.invoke(app, ["storage-fees", "--as-of", "2026-10-23T10:00"])
+    assert result.exit_code == 0
+    assert "MV-ATLAS  owes 90.00 for storage" in result.output
+
+
+def test_loaded_cargo_is_no_longer_charged() -> None:
+    dock_atlas_next_to_north_warehouse()
+    unload = ["unload-cargo", "MV-ATLAS", "W-NORTH", "30", "--stored-at", "2026-10-18T10:00"]
+    runner.invoke(app, unload)
+    runner.invoke(app, ["load-cargo", "MV-ATLAS", "W-NORTH", "30"])
+    result = runner.invoke(app, ["storage-fees", "--as-of", "2026-10-23T10:00"])
+    assert "no cargo in storage" in result.output
+
+
+def test_unload_cargo_with_invalid_storage_time_changes_nothing() -> None:
+    dock_atlas_next_to_north_warehouse()
+    result = runner.invoke(
+        app, ["unload-cargo", "MV-ATLAS", "W-NORTH", "30", "--stored-at", "soon"]
+    )
+    assert result.exit_code == 1
+    assert "must look like" in result.output
+    assert "used 0/200" in runner.invoke(app, ["list-warehouses"]).output
+
+
+def test_storage_fees_with_invalid_time_fails_with_message() -> None:
+    result = runner.invoke(app, ["storage-fees", "--as-of", "later"])
+    assert result.exit_code == 1
+    assert "fee time must look like" in result.output

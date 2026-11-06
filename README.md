@@ -11,6 +11,8 @@ free dock that is big enough for it, and a dock never holds two ships at once.
 Also tracks warehouses (storage areas) for cargo, with how many units each one has
 used and free. A docked ship can unload cargo into a warehouse or load cargo from
 one, never more than the ship carries, the warehouse holds, or either has room for.
+Cargo kept in a warehouse is free for the first 3 days; after that each ship is charged
+the warehouse's daily rate for every unit of its cargo, for every full day past the free period.
 
 ## Who is this for 
 This project is for port managers to track the activity in their ports, while making sure incoming movement is valid. 
@@ -41,9 +43,10 @@ uv run ship-port-management dock-vessel MV-ATLAS D1
 uv run ship-port-management list-docks
 
 uv run ship-port-management add-warehouse W-NORTH 200 1.5
-uv run ship-port-management unload-cargo MV-ATLAS W-NORTH 30
+uv run ship-port-management unload-cargo MV-ATLAS W-NORTH 30 --stored-at 2026-10-18T10:00
 uv run ship-port-management load-cargo MV-ATLAS W-NORTH 10
 uv run ship-port-management list-warehouses
+uv run ship-port-management storage-fees --as-of 2026-10-23T10:00
 ```
 
 ```
@@ -58,6 +61,7 @@ Added warehouse W-NORTH, room for 200 units at 1.5 per unit per day
 Unloaded 30 units from MV-ATLAS into W-NORTH
 Loaded 10 units from W-NORTH onto MV-ATLAS
 W-NORTH  used 20/200  free 180  rate 1.5 per unit per day
+MV-ATLAS  owes 60.00 for storage
 ```
 
 | Command | What it does |
@@ -72,12 +76,16 @@ W-NORTH  used 20/200  free 180  rate 1.5 per unit per day
 | `add-warehouse WAREHOUSE_ID CAPACITY DAILY_RATE_PER_UNIT` | Adds a warehouse (capacity in cargo units, rate per unit per day) |
 | `list-warehouses` | Shows every warehouse with its used and free units |
 | `unload-cargo SHIP_ID WAREHOUSE_ID UNITS` | Moves cargo from a docked ship into a warehouse |
-| `load-cargo SHIP_ID WAREHOUSE_ID UNITS` | Moves cargo from a warehouse onto a docked ship |
+| `--stored-at TIME` | When the cargo went into storage, e.g. `2026-10-18T10:00` (default now) |
+| `load-cargo SHIP_ID WAREHOUSE_ID UNITS` | Moves cargo from a warehouse onto a docked ship, taking that ship's own cargo first, oldest first |
+| `storage-fees` | Shows the storage fee each ship owes for its cargo in storage |
+| `--as-of TIME` | When to calculate the fees up to (default now) |
 | `--help` | Shows all commands and options |
 
 
 Ships are saved in `data/ships.csv`, docks in `data/docks.csv`, which ship is at which
-dock in `data/dockings.csv` and warehouses in `data/warehouses.csv`. Delete the `data` folder to start with an empty port.
+dock in `data/dockings.csv`, warehouses in `data/warehouses.csv` and which ship's cargo
+is in which warehouse since when in `data/stored_cargo.csv`. Delete the `data` folder to start with an empty port.
 
 Bad input is refused with a message and exit code 1, for example cargo over capacity:
 
@@ -111,7 +119,8 @@ src/ship_port_management/   the package
   dockings.py               Docking a ship: size check, no double booking
   cargo.py                  Loading and unloading cargo between docked ships and warehouses
   warehouses.py             Warehouse (storage area): capacity, used and free units
-  csv_handling.py           reads and writes the ships, docks, dockings and warehouses CSV files
+  storage.py                Whose cargo is stored where since when, and the storage fees owed
+  csv_handling.py           reads and writes the ships, docks, dockings, warehouses and stored cargo CSV files
   __main__.py               lets `python -m ship_port_management` work
 tests/                      pytest tests, one file per module
 pyproject.toml              dependencies and tool configuration, the single source of truth
