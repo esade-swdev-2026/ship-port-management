@@ -91,12 +91,15 @@ def list_docks() -> None:
 
 
 @app.command()
-def dock_vessel(ship_id: str, dock_id: str) -> None:
+def dock_vessel(ship_id: str, dock_id: str, docked_at: str = "") -> None:
+    docking_time = docked_at or datetime.now().isoformat(timespec="minutes")
     try:
         ship = ships.find_ship(ship_id, read_ships(SHIPS_FILE))
         dock = docks.find_dock(dock_id, read_docks(DOCKS_FILE))
         current_dockings = read_dockings(DOCKINGS_FILE)
-        write_dockings(DOCKINGS_FILE, dockings.dock_ship(ship, dock, current_dockings))
+        write_dockings(
+            DOCKINGS_FILE, dockings.dock_ship(ship, dock, docking_time, current_dockings)
+        )
     except (OSError, ValueError) as error:
         typer.echo(f"could not dock {ship_id}: {error}", err=True)
         raise typer.Exit(code=1) from None

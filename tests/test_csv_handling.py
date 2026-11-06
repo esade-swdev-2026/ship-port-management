@@ -67,7 +67,10 @@ def test_missing_file_means_no_warehouses(tmp_path: Path) -> None:
 
 def test_dockings_written_can_be_read_back(tmp_path: Path) -> None:
     dockings_file = tmp_path / "data" / "dockings.csv"
-    dockings = [Docking("IMO9074729", "North"), Docking("IMO9012328", "South")]
+    dockings = [
+        Docking("IMO9074729", "North", "2026-10-14T12:00"),
+        Docking("IMO9012328", "South", "2026-10-14T13:30"),
+    ]
     write_dockings(dockings_file, dockings)
     assert read_dockings(dockings_file) == dockings
 

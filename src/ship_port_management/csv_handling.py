@@ -30,7 +30,8 @@ WAREHOUSE_FIELDS_PER_ROW = len(WAREHOUSE_HEADER)
 
 DOCKING_SHIP_ID = 0
 DOCKING_DOCK_ID = 1
-DOCKING_HEADER = ["ship_id", "dock_id"]
+DOCKING_DOCKED_AT = 2
+DOCKING_HEADER = ["ship_id", "dock_id", "docked_at"]
 DOCKING_FIELDS_PER_ROW = len(DOCKING_HEADER)
 
 STORED_CARGO_SHIP_ID = 0
@@ -150,7 +151,13 @@ def read_dockings(path: Path) -> list[Docking]:
         for row in reader:
             if len(row) != DOCKING_FIELDS_PER_ROW:
                 raise ValueError(f"malformed row in {path}: {row}")
-            dockings.append(Docking(ship_id=row[DOCKING_SHIP_ID], dock_id=row[DOCKING_DOCK_ID]))
+            dockings.append(
+                Docking(
+                    ship_id=row[DOCKING_SHIP_ID],
+                    dock_id=row[DOCKING_DOCK_ID],
+                    docked_at=row[DOCKING_DOCKED_AT],
+                )
+            )
     return dockings
 
 
@@ -160,7 +167,7 @@ def write_dockings(path: Path, dockings: list[Docking]) -> None:
         writer = csv.writer(handle)
         writer.writerow(DOCKING_HEADER)
         for docking in dockings:
-            writer.writerow([docking.ship_id, docking.dock_id])
+            writer.writerow([docking.ship_id, docking.dock_id, docking.docked_at])
 
 
 def read_stored_cargo(path: Path) -> list[StoredCargo]:
