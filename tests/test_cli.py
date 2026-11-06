@@ -151,3 +151,26 @@ def test_unload_cargo_from_undocked_ship_fails() -> None:
     result = runner.invoke(app, ["unload-cargo", "MV-ATLAS", "W-NORTH", "10"])
     assert result.exit_code == 1
     assert "not docked" in result.output
+
+
+def test_port_status_of_empty_port() -> None:
+    result = runner.invoke(app, ["port-status"])
+    assert result.exit_code == 0
+    assert "none" in result.output
+
+
+def test_port_status_shows_a_docked_ship() -> None:
+    runner.invoke(app, REGISTER_ATLAS)
+    runner.invoke(app, ADD_DOCK_D1)
+    runner.invoke(app, DOCK_ATLAS_AT_D1)
+    result = runner.invoke(app, ["port-status"])
+    assert result.exit_code == 0
+    assert "MV-ATLAS  Atlas  at dock D1" in result.output
+
+
+def test_port_status_with_corrupt_warehouse_file_fails_cleanly() -> None:
+    Path("data").mkdir()
+    Path("data/warehouses.csv").write_text("warehouse_id,capacity,daily_rate,stored\nW1,0,1.5,0\n")
+    result = runner.invoke(app, ["port-status"])
+    assert result.exit_code == 1
+    assert "has capacity 0" in result.output

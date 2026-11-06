@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer
 
-from ship_port_management import cargo, dockings, docks, ships, warehouses
+from ship_port_management import cargo, dockings, docks, ships, status, warehouses
 from ship_port_management.csv_handling import (
     read_dockings,
     read_docks,
@@ -179,6 +179,22 @@ def load_cargo(ship_id: str, warehouse_id: str, units: int) -> None:
         typer.echo(f"could not load {ship_id}: {error}", err=True)
         raise typer.Exit(code=1) from None
     typer.echo(f"Loaded {units} units from {warehouse_id} onto {ship_id}")
+
+
+@app.command()
+def port_status() -> None:
+    try:
+        lines = status.format_port_status(
+            read_ships(SHIPS_FILE),
+            read_docks(DOCKS_FILE),
+            read_warehouses(WAREHOUSES_FILE),
+            read_dockings(DOCKINGS_FILE),
+        )
+    except (OSError, ValueError) as error:
+        typer.echo(f"could not show the port status: {error}", err=True)
+        raise typer.Exit(code=1) from None
+    for line in lines:
+        typer.echo(line)
 
 
 if __name__ == "__main__":
