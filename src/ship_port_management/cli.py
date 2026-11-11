@@ -1,4 +1,3 @@
-from datetime import datetime
 from pathlib import Path
 
 import typer
@@ -16,6 +15,7 @@ from ship_port_management.csv_handling import (
     write_stored_cargo,
     write_warehouses,
 )
+from ship_port_management.times import current_time
 
 SHIPS_FILE = Path("data") / "ships.csv"
 DOCKS_FILE = Path("data") / "docks.csv"
@@ -34,7 +34,7 @@ def main() -> None:
 def register_vessel(
     ship_id: str, name: str, capacity: int, cargo_units: int = 0, arrival_time: str = ""
 ) -> None:
-    arrival = arrival_time or datetime.now().isoformat(timespec="minutes")
+    arrival = arrival_time or current_time()
     new_ship = ships.Ship(ship_id, name, arrival, capacity, cargo_units)
     try:
         registered_ships = read_ships(SHIPS_FILE)
@@ -92,7 +92,7 @@ def list_docks() -> None:
 
 @app.command()
 def dock_vessel(ship_id: str, dock_id: str, docked_at: str = "") -> None:
-    docking_time = docked_at or datetime.now().isoformat(timespec="minutes")
+    docking_time = docked_at or current_time()
     try:
         ship = ships.find_ship(ship_id, read_ships(SHIPS_FILE))
         dock = docks.find_dock(dock_id, read_docks(DOCKS_FILE))
@@ -152,7 +152,7 @@ def save_cargo_move(
 
 @app.command()
 def unload_cargo(ship_id: str, warehouse_id: str, units: int, stored_at: str = "") -> None:
-    storage_time = stored_at or datetime.now().isoformat(timespec="minutes")
+    storage_time = stored_at or current_time()
     try:
         registered_ships = read_ships(SHIPS_FILE)
         registered_warehouses = read_warehouses(WAREHOUSES_FILE)
@@ -194,7 +194,7 @@ def load_cargo(ship_id: str, warehouse_id: str, units: int) -> None:
 
 @app.command()
 def storage_fees(as_of: str = "") -> None:
-    fee_time = as_of or datetime.now().isoformat(timespec="minutes")
+    fee_time = as_of or current_time()
     try:
         fees = storage.fees_by_ship(
             read_stored_cargo(STORED_CARGO_FILE), read_warehouses(WAREHOUSES_FILE), fee_time

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ship_port_management.times import is_valid_iso_time
+from ship_port_management.times import parse_time
 
 
 @dataclass(frozen=True)
@@ -32,10 +32,7 @@ def register_ship(new_ship: Ship, registered: list[Ship]) -> list[Ship]:
         raise ValueError("capacity must be positive")
     if not cargo_within_capacity(new_ship):
         raise ValueError("cargo units must be between 0 and capacity")
-    if not is_valid_iso_time(new_ship.arrival_time):
-        raise ValueError(
-            f"arrival time must look like 2026-10-18T09:30, got {new_ship.arrival_time}"
-        )
+    parse_time(new_ship.arrival_time, "arrival time")
     return registered + [new_ship]
 
 

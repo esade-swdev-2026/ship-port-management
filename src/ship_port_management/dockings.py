@@ -1,9 +1,8 @@
 from dataclasses import dataclass
-from datetime import datetime
 
 from ship_port_management.docks import Dock
 from ship_port_management.ships import Ship
-from ship_port_management.times import is_valid_iso_time
+from ship_port_management.times import parse_time
 
 
 @dataclass(frozen=True)
@@ -35,9 +34,7 @@ def dock_ship(ship: Ship, dock: Dock, docked_at: str, dockings: list[Docking]) -
         raise ValueError(f"dock {dock.dock_id} is already occupied")
     if is_ship_docked(ship.ship_id, dockings):
         raise ValueError(f"ship {ship.ship_id} is already docked")
-    if not is_valid_iso_time(docked_at):
-        raise ValueError(f"docking time must look like 2026-10-18T09:30, got {docked_at}")
-    if datetime.fromisoformat(docked_at) < datetime.fromisoformat(ship.arrival_time):
+    if parse_time(docked_at, "docking time") < parse_time(ship.arrival_time, "arrival time"):
         raise ValueError(
             f"docking time ({docked_at}) can't be before arrival time ({ship.arrival_time})"
         )
