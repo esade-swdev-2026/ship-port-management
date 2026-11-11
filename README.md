@@ -122,6 +122,7 @@ src/ship_port_management/   the package
   cargo.py                  Loading and unloading cargo between docked ships and warehouses
   warehouses.py             Warehouse (storage area): capacity, used and free units
   storage.py                Whose cargo is stored where since when, and the storage fees owed
+  times.py                  Reading and checking times like 2026-10-18T09:30, and the current time
   csv_handling.py           reads and writes the ships, docks, dockings, warehouses and stored cargo CSV files
   __main__.py               lets `python -m ship_port_management` work
 tests/                      pytest tests, one file per module
