@@ -76,6 +76,11 @@ def test_fill_level_shows_units_and_percentage() -> None:
     assert describe_fill_level(HALF_FULL) == "W1  100/200 units  50% full"
 
 
+def test_almost_full_warehouse_is_not_shown_as_full() -> None:
+    almost_full = Warehouse("W4", WAREHOUSE_CAPACITY, 1.5, WAREHOUSE_CAPACITY - 1)
+    assert describe_fill_level(almost_full).endswith("99% full")
+
+
 def test_empty_section_says_none() -> None:
     assert format_section("Storage", []) == ["Storage", "  none"]
 

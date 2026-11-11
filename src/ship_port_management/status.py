@@ -43,7 +43,7 @@ def describe_ship_location(ship: Ship, dockings: list[Docking]) -> str:
 def describe_fill_level(warehouse: Warehouse) -> str:
     return (
         f"{warehouse.warehouse_id}  {warehouse.stored_units}/{warehouse.capacity} units  "
-        f"{fill_percentage(warehouse):.0f}% full"
+        f"{int(fill_percentage(warehouse))}% full"
     )
 
 
