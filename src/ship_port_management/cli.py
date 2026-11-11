@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer
 
-from ship_port_management import cargo, dockings, docks, ships, storage, warehouses
+from ship_port_management import cargo, dockings, docks, ships, status, storage, warehouses
 from ship_port_management.csv_handling import (
     read_dockings,
     read_docks,
@@ -207,6 +207,22 @@ def storage_fees(as_of: str = "") -> None:
         return
     for ship_id, fee in fees.items():
         typer.echo(storage.describe_storage_fee(ship_id, fee))
+
+
+@app.command()
+def port_status() -> None:
+    try:
+        lines = status.format_port_status(
+            read_ships(SHIPS_FILE),
+            read_docks(DOCKS_FILE),
+            read_warehouses(WAREHOUSES_FILE),
+            read_dockings(DOCKINGS_FILE),
+        )
+    except (OSError, ValueError) as error:
+        typer.echo(f"could not show the port status: {error}", err=True)
+        raise typer.Exit(code=1) from None
+    for line in lines:
+        typer.echo(line)
 
 
 if __name__ == "__main__":

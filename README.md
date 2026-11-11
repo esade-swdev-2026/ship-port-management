@@ -81,6 +81,7 @@ MV-ATLAS owes 60.00 for storage
 | `load-cargo SHIP_ID WAREHOUSE_ID UNITS` | Moves cargo from a warehouse onto a docked ship, taking that ship's own cargo first, oldest first |
 | `storage-fees` | Shows the storage fee each ship owes for its cargo in storage |
 | `--as-of TIME` | When to calculate the fees up to (default now) |
+| `port-status` | Shows every ship and its dock, the free docks and how full each warehouse is |
 | `--help` | Shows all commands and options |
 
 
