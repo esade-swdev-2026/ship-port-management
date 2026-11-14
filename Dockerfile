@@ -9,7 +9,7 @@ COPY README.md LICENSE ./
 COPY src ./src
 RUN uv sync --locked --no-dev
 
-RUN useradd --create-home app && mkdir /app/data && chown app:app /app/data
+RUN useradd --create-home app && mkdir -p /app/data && chown app:app /app/data
 USER app
 
 ENV PATH="/app/.venv/bin:$PATH"
