@@ -99,6 +99,17 @@ uv run ship-port-management register-vessel MV-NOVA Nova 40 --cargo-units 500
 could not register MV-NOVA: cargo units must be between 0 and capacity
 ```
 
+## Run with Docker
+
+```bash
+docker build -t ship-port-management .
+docker run --rm ship-port-management --help
+docker run --rm -v ship-port-management-data:/app/data ship-port-management register-vessel MV-ATLAS Atlas 500 --cargo-units 40 --arrival-time 2026-10-18T09:30
+docker run --rm -v ship-port-management-data:/app/data ship-port-management list-vessels
+```
+
+Each command runs in a new container that is deleted when it ends, but the ships are saved in the named volume `ship-port-management-data`, so `list-vessels` still shows MV-ATLAS. `docker volume rm ship-port-management-data` deletes the data.
+
 ## Develop
 
 ```bash
