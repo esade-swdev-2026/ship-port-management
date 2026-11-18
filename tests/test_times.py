@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from ship_port_management.times import current_time, parse_time
+from ship_port_management.times import TIME_EXAMPLE, current_time, parse_time
 
 
 def test_iso_time_is_parsed() -> None:
@@ -31,3 +31,7 @@ def test_time_with_timezone_is_refused() -> None:
 
 def test_current_time_can_be_parsed_back() -> None:
     assert parse_time(current_time(), "now").tzinfo is None
+
+
+def test_current_time_is_in_minutes_like_the_example() -> None:
+    assert len(current_time()) == len(TIME_EXAMPLE)
