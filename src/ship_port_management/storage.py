@@ -1,6 +1,7 @@
 from dataclasses import dataclass, replace
 from datetime import datetime
 
+from ship_port_management.times import parse_time
 from ship_port_management.warehouses import Warehouse, find_warehouse
 
 FREE_STORAGE_DAYS = 3
@@ -12,16 +13,6 @@ class StoredCargo:
     warehouse_id: str
     units: int
     stored_at: str  # ISO text, e.g. "2026-10-14T09:30"
-
-
-def parse_time(text: str, what: str) -> datetime:
-    try:
-        parsed = datetime.fromisoformat(text)
-    except ValueError:
-        raise ValueError(f"{what} must look like 2026-10-18T09:30, got {text}") from None
-    if parsed.tzinfo is not None:
-        raise ValueError(f"{what} must be a local time without a timezone, got {text}")
-    return parsed
 
 
 def store_cargo(new_cargo: StoredCargo, stored: list[StoredCargo]) -> list[StoredCargo]:
