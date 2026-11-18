@@ -114,3 +114,9 @@ def test_ship_with_invalid_arrival_time_is_refused() -> None:
 def test_replace_ship_swaps_only_the_matching_ship() -> None:
     unloaded_atlas = atlas_carrying(0)
     assert replace_ship(unloaded_atlas, [ATLAS, NOVA]) == [unloaded_atlas, NOVA]
+
+
+def test_arrival_time_with_timezone_is_refused() -> None:
+    ship = Ship("IMO9074729", "Atlas", "2026-10-14T09:30+01:00", ATLAS_CAPACITY, 40)
+    with pytest.raises(ValueError, match="without a timezone"):
+        register_ship(ship, [])

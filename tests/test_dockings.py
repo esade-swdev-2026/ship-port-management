@@ -82,3 +82,8 @@ def test_docking_exactly_at_arrival_is_allowed() -> None:
 def test_docking_time_that_is_not_a_time_is_refused() -> None:
     with pytest.raises(ValueError, match="docking time"):
         dock_ship(ATLAS, NORTH, "banana", [])
+
+
+def test_docking_time_with_timezone_is_refused() -> None:
+    with pytest.raises(ValueError, match="without a timezone"):
+        dock_ship(ATLAS, NORTH, "2026-10-14T12:00+01:00", [])
