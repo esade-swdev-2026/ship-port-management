@@ -1,0 +1,41 @@
+# Runs when a version tag such as v1.0 is pushed. It builds the same image that
+# check.yml builds, checks that it runs, and publishes it to GitHub Container
+# Registry as ghcr.io/esade-swdev-2026/ship-port-management:<tag> and :latest.
+# Nobody pushes images by hand: the demo pulls exactly what this workflow built.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the tagged commit
+        uses: actions/checkout@v7
+
+      - name: Build the image
+        run: >
+          docker build
+          --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}"
+          -t "$IMAGE:${{ github.ref_name }}" -t "$IMAGE:latest" .
+
+      - name: Run the image
+        run: docker run --rm "$IMAGE:${{ github.ref_name }}" --help
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Push the image
+        run: |
+          docker push "$IMAGE:${{ github.ref_name }}"
+          docker push "$IMAGE:latest"

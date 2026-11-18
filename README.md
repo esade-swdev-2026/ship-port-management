@@ -110,6 +110,14 @@ docker run --rm -v ship-port-management-data:/app/data ship-port-management list
 
 Each command runs in a new container that is deleted when it ends, but the ships are saved in the named volume `ship-port-management-data`, so `list-vessels` still shows MV-ATLAS. `docker volume rm ship-port-management-data` deletes the data.
 
+Every version tag (for example `v1.0`) is built and published by `.github/workflows/release.yml`,
+so you can also skip the build and run the released image:
+
+```bash
+docker pull ghcr.io/esade-swdev-2026/ship-port-management:v1.0
+docker run --rm -v ship-port-management-data:/app/data ghcr.io/esade-swdev-2026/ship-port-management:v1.0 list-vessels
+```
+
 ## Develop
 
 ```bash
