@@ -47,6 +47,7 @@ uv run ship-port-management unload-cargo MV-ATLAS W-NORTH 30 --stored-at 2026-10
 uv run ship-port-management load-cargo MV-ATLAS W-NORTH 10
 uv run ship-port-management list-warehouses
 uv run ship-port-management storage-fees --as-of 2026-10-23T10:00
+uv run ship-port-management port-status
 ```
 
 ```
@@ -62,6 +63,12 @@ Unloaded 30 units from MV-ATLAS into W-NORTH
 Loaded 10 units from W-NORTH onto MV-ATLAS
 W-NORTH  used 20/200  free 180  rate 1.5 per unit per day
 MV-ATLAS owes 60.00 for storage
+Ships
+  MV-ATLAS  Atlas  at dock D1
+Available docks
+  none
+Storage
+  W-NORTH  20/200 units  10% full
 ```
 
 | Command | What it does |
@@ -72,7 +79,7 @@ MV-ATLAS owes 60.00 for storage
 | `list-vessels` | Shows every ship in the port |
 | `add-dock DOCK_ID MAX_SHIP_SIZE HOURLY_RATE` | Adds a dock (max ship size in cargo units, rate per hour) |
 | `dock-vessel SHIP_ID DOCK_ID` | Docks a registered ship at a free dock that fits its size |
-| ⁠ --docked-at TIME ⁠ | When it docked, e.g. ⁠ 2026-11-03T10:00 ⁠ (default now); not before the ship's arrival |
+| `--docked-at TIME` | When it docked, e.g. `2026-11-03T10:00` (default now); not before the ship's arrival |
 | `list-docks` | Shows every dock and if it is available or occupied |
 | `add-warehouse WAREHOUSE_ID CAPACITY DAILY_RATE_PER_UNIT` | Adds a warehouse (capacity in cargo units, rate per unit per day) |
 | `list-warehouses` | Shows every warehouse with its used and free units |
@@ -140,8 +147,17 @@ pyproject.toml              dependencies and tool configuration, the single sour
 ```
 
 ## Use of AI
-```
-We used Claude as an assistant while building this project: to explain course concepts, plan
-the structure, review our code, suggest code snippets, write in .md, and help when we got lost with git. Every change was written into the
-files, checked with ruff, mypy and pytest, and reviewed by the team before it was merged.
-```
+
+We used Claude (claude.ai chat, and Claude Code from November) as an assistant while building
+this project: to explain course concepts, plan the structure, review our code, suggest code
+snippets, write Markdown, and help when we got lost with git.
+
+Since the partial submission (v0.5) we also used Claude Code inside the repository to:
+- draft the Dockerfile, `.dockerignore` and the release workflow that publishes the image;
+- write first drafts of tests and of README sections;
+- turn backlog items into precise task descriptions for the teammate implementing them.
+
+Every change was read by its author, checked with ruff, mypy and pytest, reviewed by another
+member in a pull request before it was merged, and edge-tested by hand.
+
+See also our [Definition of Done](DEFINITION-OF-DONE.md).
