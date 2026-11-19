@@ -12,6 +12,8 @@ REGISTER_OVERLOADED = ["register-vessel", "MV-ATLAS", "Atlas", "40", "--cargo-un
 ADD_NORTH_WAREHOUSE = ["add-warehouse", "W-NORTH", "200", "1.5"]
 ADD_DOCK_D1 = ["add-dock", "D1", "500", "120"]
 DOCK_ATLAS_AT_D1 = ["dock-vessel", "MV-ATLAS", "D1"]
+DOCK_ATLAS_AT_TEN = [*DOCK_ATLAS_AT_D1, "--docked-at", "2026-10-18T10:00"]
+DEPART_ATLAS = ["depart-vessel", "MV-ATLAS", "--departed-at", "2026-10-18T15:20"]
 
 
 @pytest.fixture(autouse=True)
@@ -120,6 +122,57 @@ def test_add_dock_with_nan_rate_fails_with_message() -> None:
     result = runner.invoke(app, ["add-dock", "D1", "500", "nan"])
     assert result.exit_code == 1
     assert "finite number" in result.output
+
+
+def dock_atlas_at_ten() -> None:
+    runner.invoke(app, [*REGISTER_ATLAS, "--arrival-time", "2026-10-18T09:30"])
+    runner.invoke(app, ADD_DOCK_D1)
+    runner.invoke(app, DOCK_ATLAS_AT_TEN)
+
+
+def test_depart_vessel_shows_the_docking_fee() -> None:
+    dock_atlas_at_ten()
+    result = runner.invoke(app, DEPART_ATLAS)
+    assert result.exit_code == 0
+    assert "MV-ATLAS left D1 after 6 hours, docking fee 720.00" in result.output
+
+
+def test_departed_ship_makes_its_dock_available() -> None:
+    dock_atlas_at_ten()
+    runner.invoke(app, DEPART_ATLAS)
+    assert "Status: available" in runner.invoke(app, ["list-docks"]).output
+
+
+def test_departed_ship_can_dock_again() -> None:
+    dock_atlas_at_ten()
+    runner.invoke(app, DEPART_ATLAS)
+    result = runner.invoke(app, [*DOCK_ATLAS_AT_D1, "--docked-at", "2026-10-19T08:00"])
+    assert result.exit_code == 0
+    assert "Docked MV-ATLAS at D1" in result.output
+
+
+def test_departing_an_undocked_ship_fails_with_message() -> None:
+    runner.invoke(app, REGISTER_ATLAS)
+    result = runner.invoke(app, ["depart-vessel", "MV-ATLAS"])
+    assert result.exit_code == 1
+    assert "is not docked" in result.output
+
+
+def test_departing_before_docking_keeps_the_dock_occupied() -> None:
+    dock_atlas_at_ten()
+    result = runner.invoke(app, ["depart-vessel", "MV-ATLAS", "--departed-at", "2026-10-18T09:45"])
+    assert result.exit_code == 1
+    assert "before docking time" in result.output
+    assert "Status: occupied" in runner.invoke(app, ["list-docks"]).output
+
+
+def test_departing_with_a_corrupt_departures_file_keeps_the_dock_occupied() -> None:
+    dock_atlas_at_ten()
+    Path("data/departures.csv").write_text("ship_id,dock_id\nMV-NOVA\n")
+    result = runner.invoke(app, DEPART_ATLAS)
+    assert result.exit_code == 1
+    assert "malformed row" in result.output
+    assert "Status: occupied" in runner.invoke(app, ["list-docks"]).output
 
 
 def dock_atlas_next_to_north_warehouse() -> None:

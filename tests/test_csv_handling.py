@@ -3,17 +3,20 @@ from pathlib import Path
 import pytest
 
 from ship_port_management.csv_handling import (
+    read_departures,
     read_dockings,
     read_docks,
     read_ships,
     read_stored_cargo,
     read_warehouses,
+    write_departures,
     write_dockings,
     write_docks,
     write_ships,
     write_stored_cargo,
     write_warehouses,
 )
+from ship_port_management.departures import Departure
 from ship_port_management.dockings import Docking
 from ship_port_management.docks import Dock
 from ship_port_management.ships import Ship
@@ -91,3 +94,26 @@ def test_stored_cargo_written_can_be_read_back(tmp_path: Path) -> None:
 
 def test_missing_file_means_no_stored_cargo(tmp_path: Path) -> None:
     assert read_stored_cargo(tmp_path / "missing.csv") == []
+
+
+def test_departures_written_can_be_read_back(tmp_path: Path) -> None:
+    departures_file = tmp_path / "data" / "departures.csv"
+    departures = [
+        Departure("IMO9074729", "North", "2026-10-14T10:00", "2026-10-14T15:20", 6, 720.0),
+        Departure("IMO9012328", "South", "2026-10-14T13:30", "2026-10-14T15:30", 2, 161.0),
+    ]
+    write_departures(departures_file, departures)
+    assert read_departures(departures_file) == departures
+
+
+def test_missing_file_means_no_departures(tmp_path: Path) -> None:
+    assert read_departures(tmp_path / "missing.csv") == []
+
+
+def test_departure_row_with_missing_columns_is_refused(tmp_path: Path) -> None:
+    departures_file = tmp_path / "departures.csv"
+    departures_file.write_text(
+        "ship_id,dock_id,docked_at,departed_at,hours,docking_fee\nIMO9074729,North\n"
+    )
+    with pytest.raises(ValueError):
+        read_departures(departures_file)

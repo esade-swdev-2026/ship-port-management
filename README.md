@@ -7,6 +7,8 @@ the ship's capacity, is refused with a clear message.
 Also tracks different docks that ships can stay at. Any invalid input, such as 
 adding 2 docks with the same dock_id is refused clearly. A ship can be docked at a
 free dock that is big enough for it, and a dock never holds two ships at once.
+When a ship departs, its dock is freed and it is charged the dock's hourly rate for every
+started hour it spent there.
 
 Also tracks warehouses (storage areas) for cargo, with how many units each one has
 used and free. A docked ship can unload cargo into a warehouse or load cargo from
@@ -32,14 +34,14 @@ and CI resolve the same ones. When you change a dependency in `pyproject.toml`, 
 
 ## Use
 
-Register a ship, dock it, add a warehouse, then move cargo between them:
+Register a ship, dock it, add a warehouse, move cargo between them, then let the ship depart:
 
 ```bash
 uv run ship-port-management register-vessel MV-ATLAS Atlas 500 --cargo-units 40 --arrival-time 2026-10-18T09:30
 uv run ship-port-management list-vessels
 
 uv run ship-port-management add-dock D1 500 120
-uv run ship-port-management dock-vessel MV-ATLAS D1
+uv run ship-port-management dock-vessel MV-ATLAS D1 --docked-at 2026-10-18T09:30
 uv run ship-port-management list-docks
 
 uv run ship-port-management add-warehouse W-NORTH 200 1.5
@@ -47,6 +49,7 @@ uv run ship-port-management unload-cargo MV-ATLAS W-NORTH 30 --stored-at 2026-10
 uv run ship-port-management load-cargo MV-ATLAS W-NORTH 10
 uv run ship-port-management list-warehouses
 uv run ship-port-management storage-fees --as-of 2026-10-23T10:00
+uv run ship-port-management depart-vessel MV-ATLAS --departed-at 2026-10-23T12:00
 ```
 
 ```
@@ -62,6 +65,7 @@ Unloaded 30 units from MV-ATLAS into W-NORTH
 Loaded 10 units from W-NORTH onto MV-ATLAS
 W-NORTH  used 20/200  free 180  rate 1.5 per unit per day
 MV-ATLAS owes 60.00 for storage
+MV-ATLAS left D1 after 123 hours, docking fee 14760.00
 ```
 
 | Command | What it does |
@@ -73,6 +77,8 @@ MV-ATLAS owes 60.00 for storage
 | `add-dock DOCK_ID MAX_SHIP_SIZE HOURLY_RATE` | Adds a dock (max ship size in cargo units, rate per hour) |
 | `dock-vessel SHIP_ID DOCK_ID` | Docks a registered ship at a free dock that fits its size |
 | ⁠ --docked-at TIME ⁠ | When it docked, e.g. ⁠ 2026-11-03T10:00 ⁠ (default now); not before the ship's arrival |
+| `depart-vessel SHIP_ID` | Frees the ship's dock and shows the docking fee (hourly rate x started hours) |
+| `--departed-at TIME` | When it left, e.g. `2026-10-18T15:20` (default now); not before it docked |
 | `list-docks` | Shows every dock and if it is available or occupied |
 | `add-warehouse WAREHOUSE_ID CAPACITY DAILY_RATE_PER_UNIT` | Adds a warehouse (capacity in cargo units, rate per unit per day) |
 | `list-warehouses` | Shows every warehouse with its used and free units |
@@ -86,8 +92,9 @@ MV-ATLAS owes 60.00 for storage
 
 
 Ships are saved in `data/ships.csv`, docks in `data/docks.csv`, which ship is at which
-dock in `data/dockings.csv`, warehouses in `data/warehouses.csv` and which ship's cargo
-is in which warehouse since when in `data/stored_cargo.csv`. Delete the `data` folder to start with an empty port.
+dock in `data/dockings.csv`, warehouses in `data/warehouses.csv`, which ship's cargo
+is in which warehouse since when in `data/stored_cargo.csv` and departed visits with their
+docking fee in `data/departures.csv`. Delete the `data` folder to start with an empty port.
 
 Bad input is refused with a message and exit code 1, for example cargo over capacity:
 
@@ -130,6 +137,7 @@ src/ship_port_management/   the package
   ships.py                  Ship and the rules for registering one
   docks.py                  Dock and the rules for adding one
   dockings.py               Docking a ship: size check, no double booking
+  departures.py             Ship departures: freeing the dock and the docking fee
   cargo.py                  Loading and unloading cargo between docked ships and warehouses
   warehouses.py             Warehouse (storage area): capacity, used and free units
   storage.py                Whose cargo is stored where since when, and the storage fees owed

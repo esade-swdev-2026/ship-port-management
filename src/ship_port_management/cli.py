@@ -2,13 +2,24 @@ from pathlib import Path
 
 import typer
 
-from ship_port_management import cargo, dockings, docks, ships, status, storage, warehouses
+from ship_port_management import (
+    cargo,
+    departures,
+    dockings,
+    docks,
+    ships,
+    status,
+    storage,
+    warehouses,
+)
 from ship_port_management.csv_handling import (
+    read_departures,
     read_dockings,
     read_docks,
     read_ships,
     read_stored_cargo,
     read_warehouses,
+    write_departures,
     write_dockings,
     write_docks,
     write_ships,
@@ -22,6 +33,7 @@ DOCKS_FILE = Path("data") / "docks.csv"
 WAREHOUSES_FILE = Path("data") / "warehouses.csv"
 DOCKINGS_FILE = Path("data") / "dockings.csv"
 STORED_CARGO_FILE = Path("data") / "stored_cargo.csv"
+DEPARTURES_FILE = Path("data") / "departures.csv"
 app = typer.Typer(help="Track ships, docks and cargo in a port.")
 
 
@@ -104,6 +116,22 @@ def dock_vessel(ship_id: str, dock_id: str, docked_at: str = "") -> None:
         typer.echo(f"could not dock {ship_id}: {error}", err=True)
         raise typer.Exit(code=1) from None
     typer.echo(f"Docked {ship_id} at {dock_id}")
+
+
+@app.command()
+def depart_vessel(ship_id: str, departed_at: str = "") -> None:
+    departure_time = departed_at or current_time()
+    try:
+        result = departures.depart_ship(
+            ship_id, departure_time, read_dockings(DOCKINGS_FILE), read_docks(DOCKS_FILE)
+        )
+        recorded_departures = read_departures(DEPARTURES_FILE)
+        write_dockings(DOCKINGS_FILE, result.dockings)
+        write_departures(DEPARTURES_FILE, recorded_departures + [result.departure])
+    except (OSError, ValueError) as error:
+        typer.echo(f"could not depart {ship_id}: {error}", err=True)
+        raise typer.Exit(code=1) from None
+    typer.echo(departures.describe_departure(result.departure))
 
 
 @app.command()
