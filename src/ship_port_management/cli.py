@@ -225,5 +225,12 @@ def port_status() -> None:
         typer.echo(line)
 
 
+@app.command()
+def tui() -> None:
+    from ship_port_management.tui import HarbourApp
+
+    HarbourApp().run()
+
+
 if __name__ == "__main__":
     app()

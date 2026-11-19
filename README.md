@@ -89,6 +89,7 @@ Storage
 | `storage-fees` | Shows the storage fee each ship owes for its cargo in storage |
 | `--as-of TIME` | When to calculate the fees up to (default now) |
 | `port-status` | Shows every ship and its dock, the free docks and how full each warehouse is |
+| `tui` | Opens the terminal interface: tabs for ships, docks, warehouses and fees, `n` new, `d` dock, `u` unload, `l` load, `q` quit |
 | `--help` | Shows all commands and options |
 
 
@@ -117,6 +118,8 @@ docker run --rm -v ship-port-management-data:/app/data ship-port-management list
 
 Each command runs in a new container that is deleted when it ends, but the ships are saved in the named volume `ship-port-management-data`, so `list-vessels` still shows MV-ATLAS. `docker volume rm ship-port-management-data` deletes the data.
 
+The `tui` command needs a terminal, so run it with `-it`: `docker run --rm -it -v ship-port-management-data:/app/data ship-port-management tui`.
+
 ## Develop
 
 ```bash
@@ -134,6 +137,8 @@ If they pass here, CI passes.
 ```
 src/ship_port_management/   the package
   cli.py                    typer commands: the only module that prints or exits
+  tui.py                    Textual interface over the same cli commands
+  ship_art.py               a container ship with coloured crates, waves and smoke in Braille dots
   ships.py                  Ship and the rules for registering one
   docks.py                  Dock and the rules for adding one
   dockings.py               Docking a ship: size check, no double booking
