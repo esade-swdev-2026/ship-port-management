@@ -76,7 +76,7 @@ MV-ATLAS left D1 after 123 hours, docking fee 14760.00
 | `list-vessels` | Shows every ship in the port |
 | `add-dock DOCK_ID MAX_SHIP_SIZE HOURLY_RATE` | Adds a dock (max ship size in cargo units, rate per hour) |
 | `dock-vessel SHIP_ID DOCK_ID` | Docks a registered ship at a free dock that fits its size |
-| ⁠ --docked-at TIME ⁠ | When it docked, e.g. ⁠ 2026-11-03T10:00 ⁠ (default now); not before the ship's arrival |
+| `--docked-at TIME` | When it docked, e.g. `2026-11-03T10:00` (default now); not before the ship's arrival |
 | `depart-vessel SHIP_ID` | Frees the ship's dock and shows the docking fee (hourly rate x started hours) |
 | `--departed-at TIME` | When it left, e.g. `2026-10-18T15:20` (default now); not before it docked |
 | `list-docks` | Shows every dock and if it is available or occupied |
