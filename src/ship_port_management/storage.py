@@ -12,7 +12,7 @@ class StoredCargo:
     ship_id: str
     warehouse_id: str
     units: int
-    stored_at: str  # ISO text, e.g. "2026-10-14T09:30"
+    stored_at: str
 
 
 def store_cargo(new_cargo: StoredCargo, stored: list[StoredCargo]) -> list[StoredCargo]:
