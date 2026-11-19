@@ -149,16 +149,11 @@ pyproject.toml              dependencies and tool configuration, the single sour
 
 ## Use of AI
 
-We used Claude (claude.ai chat, and Claude Code from November) as an assistant while building
-this project: to explain course concepts, plan the structure, review our code, suggest code
-snippets, write Markdown, and help when we got lost with git.
+We used Claude Code as an assistant while building
+this project, specifically to explain course concepts, plan the structure, review our code, suggest code
+snippets, draft documentation, and help when we got lost with git.
 
-Since the partial submission (v0.5) we also used Claude Code inside the repository to:
-- draft the Dockerfile, `.dockerignore` and the release workflow that publishes the image;
-- write first drafts of tests and of README sections;
-- turn backlog items into precise task descriptions for the teammate implementing them.
-
-Every change was read by its author, checked with ruff, mypy and pytest, reviewed by another
+Every change was read and verified by the author, checked with ruff, mypy and pytest, (and later in the project) reviewed by another
 member in a pull request before it was merged, and edge-tested by hand.
 
 See also our [Definition of Done](DEFINITION-OF-DONE.md).
