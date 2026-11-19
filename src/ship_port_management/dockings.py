@@ -27,7 +27,7 @@ def is_ship_docked(ship_id: str, dockings: list[Docking]) -> bool:
 def dock_ship(ship: Ship, dock: Dock, docked_at: str, dockings: list[Docking]) -> list[Docking]:
     if not ship_fits_dock(ship, dock):
         raise ValueError(
-            f"ship {ship.ship_id} has size {ship.capacity}, "
+            f"ship {ship.ship_id} has capacity {ship.capacity}, "
             f"dock {dock.dock_id} takes at most {dock.max_ship_size}"
         )
     if dock.dock_id in occupied_dock_ids(dockings):

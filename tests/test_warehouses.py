@@ -55,11 +55,11 @@ def test_free_units_of_full_warehouse_is_zero() -> None:
 
 
 def test_duplicate_id_detected() -> None:
-    assert is_duplicate_warehouse("W-NORTH", {"W-NORTH", "W-SOUTH"})
+    assert is_duplicate_warehouse("W-NORTH", [NORTH, SOUTH])
 
 
 def test_new_id_is_not_duplicate() -> None:
-    assert not is_duplicate_warehouse("W-NORTH", {"W-SOUTH"})
+    assert not is_duplicate_warehouse("W-NORTH", [SOUTH])
 
 
 def test_add_warehouse_to_empty_list() -> None:
@@ -77,7 +77,7 @@ def test_add_warehouse_leaves_original_list_unchanged() -> None:
 
 
 def test_duplicate_warehouse_is_refused() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="warehouse W-NORTH is already registered"):
         add_warehouse(north_storing(0), [NORTH])
 
 
@@ -119,8 +119,15 @@ def test_describe_warehouse_shows_used_and_free_units() -> None:
 
 @pytest.mark.parametrize("daily_rate_per_unit", [float("nan"), float("inf")])
 def test_non_finite_daily_rate_is_refused(daily_rate_per_unit: float) -> None:
-    with pytest.raises(ValueError, match="positive number"):
+    with pytest.raises(ValueError, match="daily rate must be a positive, finite number"):
         add_warehouse(north_with_daily_rate(daily_rate_per_unit), [])
+
+
+@pytest.mark.parametrize("warehouse_id", ["", "   "])
+def test_empty_warehouse_id_is_refused(warehouse_id: str) -> None:
+    no_id = Warehouse(warehouse_id, NORTH_CAPACITY, NORTH_DAILY_RATE)
+    with pytest.raises(ValueError, match="warehouse ID must not be empty"):
+        add_warehouse(no_id, [])
 
 
 def test_find_warehouse_returns_the_matching_warehouse() -> None:
