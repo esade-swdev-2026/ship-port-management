@@ -49,6 +49,7 @@ uv run ship-port-management unload-cargo MV-ATLAS W-NORTH 30 --stored-at 2026-10
 uv run ship-port-management load-cargo MV-ATLAS W-NORTH 10
 uv run ship-port-management list-warehouses
 uv run ship-port-management storage-fees --as-of 2026-10-23T10:00
+uv run ship-port-management port-status
 uv run ship-port-management depart-vessel MV-ATLAS --departed-at 2026-10-23T12:00
 ```
 
@@ -65,6 +66,12 @@ Unloaded 30 units from MV-ATLAS into W-NORTH
 Loaded 10 units from W-NORTH onto MV-ATLAS
 W-NORTH  used 20/200  free 180  rate 1.5 per unit per day
 MV-ATLAS owes 60.00 for storage
+Ships
+  MV-ATLAS  Atlas  at dock D1
+Available docks
+  none
+Storage
+  W-NORTH  20/200 units  10% full
 MV-ATLAS left D1 after 123 hours, docking fee 14760.00
 ```
 
@@ -88,6 +95,7 @@ MV-ATLAS left D1 after 123 hours, docking fee 14760.00
 | `storage-fees` | Shows the storage fee each ship owes for its cargo in storage |
 | `--as-of TIME` | When to calculate the fees up to (default now) |
 | `port-status` | Shows every ship and its dock, the free docks and how full each warehouse is |
+| `tui` | Opens the terminal interface: tabs for ships, docks, warehouses and fees, `n` new, `d` dock, `u` unload, `l` load, `q` quit |
 | `--help` | Shows all commands and options |
 
 
@@ -117,6 +125,18 @@ docker run --rm -v ship-port-management-data:/app/data ship-port-management list
 
 Each command runs in a new container that is deleted when it ends, but the ships are saved in the named volume `ship-port-management-data`, so `list-vessels` still shows MV-ATLAS. `docker volume rm ship-port-management-data` deletes the data.
 
+The `tui` command needs a terminal, so run it with `-it`: `docker run --rm -it -v ship-port-management-data:/app/data ship-port-management tui`.
+
+Every merge to `main` and every version tag such as `v1.0` is checked, built and published by the `release` job in `.github/workflows/check.yml`. The image is private to our group and the lecturer, so log in first with a GitHub token that has `read:packages`, then run the released image without building it:
+
+```bash
+docker login ghcr.io
+docker pull ghcr.io/esade-swdev-2026/ship-port-management:v1.0
+docker run --rm -v ship-port-management-data:/app/data ghcr.io/esade-swdev-2026/ship-port-management:v1.0 list-vessels
+```
+
+The `:v1.0` image only exists once the `v1.0` tag has been pushed. A merge to `main` publishes an image tagged with the first seven characters of its commit instead, so `:1a2193f` pulls the image built from commit `1a2193f`.
+
 ## Develop
 
 ```bash
@@ -133,7 +153,9 @@ If they pass here, CI passes.
 
 ```
 src/ship_port_management/   the package
-  cli.py                    typer commands: the only module that prints or exits
+  cli.py                    typer commands: the command-line entry point, and the only module that exits
+  tui.py                    Textual interface over the same cli commands
+  ship_art.py               a container ship with coloured crates, waves and smoke in Braille dots
   ships.py                  Ship and the rules for registering one
   docks.py                  Dock and the rules for adding one
   dockings.py               Docking a ship: size check, no double booking
@@ -149,8 +171,12 @@ pyproject.toml              dependencies and tool configuration, the single sour
 ```
 
 ## Use of AI
-```
-We used Claude as an assistant while building this project: to explain course concepts, plan
-the structure, review our code, suggest code snippets, write in .md, and help when we got lost with git. Every change was written into the
-files, checked with ruff, mypy and pytest, and reviewed by the team before it was merged.
-```
+
+We used Claude Code as an assistant while building
+this project, specifically to explain course concepts, plan the structure, review our code, suggest code
+snippets, draft documentation, and help when we got lost with git.
+
+Every change was read and verified by the author, checked with ruff, mypy and pytest, (and later in the project) reviewed by another
+member in a pull request before it was merged, and edge-tested by hand.
+
+See also our [Definition of Done](DEFINITION-OF-DONE.md).

@@ -12,6 +12,10 @@ class Ship:
     cargo_units: int
 
 
+def is_valid_ship_capacity(capacity: int) -> bool:
+    return capacity > 0
+
+
 def cargo_within_capacity(ship: Ship) -> bool:
     return 0 <= ship.cargo_units <= ship.capacity
 
@@ -20,20 +24,23 @@ def remaining_capacity(ship: Ship) -> int:
     return ship.capacity - ship.cargo_units
 
 
-def is_duplicate_ship(new_ship: Ship, registered: list[Ship]) -> bool:
-    registered_ids = {ship.ship_id for ship in registered}
-    return new_ship.ship_id in registered_ids
+def is_duplicate_ship(ship_id: str, ships: list[Ship]) -> bool:
+    return any(ship.ship_id == ship_id for ship in ships)
 
 
-def register_ship(new_ship: Ship, registered: list[Ship]) -> list[Ship]:
-    if is_duplicate_ship(new_ship, registered):
-        raise ValueError(f"ship: {new_ship.ship_id} has already been registered")
-    if new_ship.capacity <= 0:
-        raise ValueError("capacity must be positive")
+def register_ship(new_ship: Ship, ships: list[Ship]) -> list[Ship]:
+    if not new_ship.ship_id.strip():
+        raise ValueError("ship ID must not be empty")
+    if not new_ship.name.strip():
+        raise ValueError("ship name must not be empty")
+    if not is_valid_ship_capacity(new_ship.capacity):
+        raise ValueError(f"capacity must be positive, got {new_ship.capacity}")
     if not cargo_within_capacity(new_ship):
         raise ValueError("cargo units must be between 0 and capacity")
     parse_time(new_ship.arrival_time, "arrival time")
-    return registered + [new_ship]
+    if is_duplicate_ship(new_ship.ship_id, ships):
+        raise ValueError(f"ship {new_ship.ship_id} has already been registered")
+    return ships + [new_ship]
 
 
 def describe_ship(ship: Ship) -> str:

@@ -267,3 +267,9 @@ def test_storage_fees_with_invalid_time_fails_with_message() -> None:
     result = runner.invoke(app, ["storage-fees", "--as-of", "later"])
     assert result.exit_code == 1
     assert "fee time must look like" in result.output
+
+
+def test_tui_without_a_terminal_says_how_to_run_it() -> None:
+    result = runner.invoke(app, ["tui"])
+    assert result.exit_code == 1
+    assert "tui needs a terminal: with Docker, run it with docker run -it" in result.output

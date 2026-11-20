@@ -64,7 +64,8 @@ def depart_ship(
 
 
 def describe_departure(departure: Departure) -> str:
+    hours_text = "1 hour" if departure.hours == 1 else f"{departure.hours} hours"
     return (
-        f"{departure.ship_id} left {departure.dock_id} after {departure.hours} hours, "
+        f"{departure.ship_id} left {departure.dock_id} after {hours_text}, "
         f"docking fee {departure.docking_fee:.2f}"
     )

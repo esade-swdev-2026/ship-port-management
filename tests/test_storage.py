@@ -9,6 +9,7 @@ from ship_port_management.storage import (
     fees_by_ship,
     store_cargo,
     take_cargo,
+    units_stored_by_ship,
 )
 from ship_port_management.warehouses import Warehouse
 
@@ -86,3 +87,13 @@ def test_fees_with_invalid_time_are_refused() -> None:
 
 def test_describe_storage_fee_shows_two_decimals() -> None:
     assert describe_storage_fee("MV-ATLAS", 90) == "MV-ATLAS owes 90.00 for storage"
+
+
+def test_units_stored_by_ship_adds_up_each_ships_cargo() -> None:
+    atlas_in_south = StoredCargo("MV-ATLAS", "W-SOUTH", 5, "2026-10-14T09:30")
+    stored = [ATLAS_IN_NORTH, NOVA_IN_NORTH, atlas_in_south]
+    assert units_stored_by_ship(stored) == {"MV-ATLAS": 35, "MV-NOVA": 20}
+
+
+def test_units_stored_by_ship_with_nothing_stored_is_empty() -> None:
+    assert units_stored_by_ship([]) == {}

@@ -64,5 +64,12 @@ def fees_by_ship(
     return fees
 
 
+def units_stored_by_ship(stored: list[StoredCargo]) -> dict[str, int]:
+    units: dict[str, int] = {}
+    for cargo in stored:
+        units[cargo.ship_id] = units.get(cargo.ship_id, 0) + cargo.units
+    return units
+
+
 def describe_storage_fee(ship_id: str, fee: float) -> str:
     return f"{ship_id} owes {fee:.2f} for storage"
