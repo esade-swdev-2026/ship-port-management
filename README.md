@@ -125,6 +125,8 @@ docker pull ghcr.io/esade-swdev-2026/ship-port-management:v1.0
 docker run --rm -v ship-port-management-data:/app/data ghcr.io/esade-swdev-2026/ship-port-management:v1.0 list-vessels
 ```
 
+The `:v1.0` image only exists once the `v1.0` tag has been pushed. A merge to `main` publishes an image tagged with the first seven characters of its commit instead, so `:1a2193f` pulls the image built from commit `1a2193f`.
+
 ## Develop
 
 ```bash
