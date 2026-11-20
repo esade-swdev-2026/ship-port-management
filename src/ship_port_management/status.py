@@ -34,6 +34,22 @@ def fill_percentage(warehouse: Warehouse) -> float:
     return warehouse.stored_units / warehouse.capacity * PERCENT
 
 
+def stored_percentage(warehouses: list[Warehouse]) -> int:
+    capacity = sum(warehouse.capacity for warehouse in warehouses)
+    stored = sum(warehouse.stored_units for warehouse in warehouses)
+    return round(stored / capacity * PERCENT) if capacity else 0
+
+
+def describe_port_summary(
+    ships: list[Ship], docks: list[Dock], warehouses: list[Warehouse], dockings: list[Docking]
+) -> str:
+    free = len(available_docks(docks, occupied_dock_ids(dockings)))
+    ship_count = f"{len(ships)} ship" + ("" if len(ships) == 1 else "s")
+    return (
+        f"{ship_count} · {free}/{len(docks)} docks free · {stored_percentage(warehouses)}% stored"
+    )
+
+
 def describe_ship_location(ship: Ship, dockings: list[Docking]) -> str:
     dock_id = current_dock_id(ship.ship_id, dockings)
     location = "not docked" if dock_id is None else f"at dock {dock_id}"
