@@ -1,6 +1,13 @@
 import pytest
 
-from ship_port_management.docks import Dock, add_dock, describe_dock, find_dock, is_dock_available
+from ship_port_management.docks import (
+    Dock,
+    add_dock,
+    describe_dock,
+    find_dock,
+    is_dock_available,
+    is_duplicate_dock,
+)
 
 
 def test_add_dock_list_not_changed() -> None:
@@ -36,13 +43,13 @@ def test_duplicate_dock_id_rejected() -> None:
     new_dock = Dock(dock_id="AA", max_ship_size=50, hourly_rate=50.0)
     docks = [existing]
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="dock AA is already registered"):
         add_dock(new_dock, docks)
 
 
 def test_zero_max_ship_size_rejected() -> None:
     new_dock = Dock(dock_id="AA", max_ship_size=0, hourly_rate=100.0)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="max ship size must be positive, got 0"):
         add_dock(new_dock, [])
 
 
@@ -52,9 +59,10 @@ def test_negative_max_ship_size_rejected() -> None:
         add_dock(new_dock, [])
 
 
-def test_zero_hourly_rate_accepted() -> None:
-    new_dock = Dock(dock_id="AA", max_ship_size=100, hourly_rate=0)
-    assert add_dock(new_dock, []) == [new_dock]
+def test_zero_hourly_rate_rejected() -> None:
+    new_dock = Dock(dock_id="AA", max_ship_size=100, hourly_rate=0.0)
+    with pytest.raises(ValueError, match="hourly rate must be a positive, finite number"):
+        add_dock(new_dock, [])
 
 
 def test_negative_hourly_rate_rejected() -> None:
@@ -100,3 +108,20 @@ def test_non_finite_hourly_rate_is_refused(hourly_rate: float) -> None:
     new_dock = Dock(dock_id="AA", max_ship_size=100, hourly_rate=hourly_rate)
     with pytest.raises(ValueError, match="finite"):
         add_dock(new_dock, [])
+
+
+@pytest.mark.parametrize("dock_id", ["", "   "])
+def test_empty_dock_id_is_refused(dock_id: str) -> None:
+    new_dock = Dock(dock_id=dock_id, max_ship_size=100, hourly_rate=100.0)
+    with pytest.raises(ValueError, match="dock ID must not be empty"):
+        add_dock(new_dock, [])
+
+
+def test_dock_with_a_registered_id_is_duplicate() -> None:
+    existing = Dock(dock_id="AA", max_ship_size=100, hourly_rate=100.0)
+    assert is_duplicate_dock("AA", [existing])
+
+
+def test_dock_with_a_new_id_is_not_duplicate() -> None:
+    existing = Dock(dock_id="AA", max_ship_size=100, hourly_rate=100.0)
+    assert not is_duplicate_dock("BB", [existing])

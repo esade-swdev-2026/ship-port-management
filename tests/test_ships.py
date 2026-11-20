@@ -42,20 +42,21 @@ def test_negative_cargo() -> None:
 
 
 def test_duplicate_ship() -> None:
-    assert is_duplicate_ship(ATLAS, [NOVA, ATLAS])
+    assert is_duplicate_ship(ATLAS.ship_id, [NOVA, ATLAS])
 
 
 def test_not_duplicate_ship() -> None:
-    assert not is_duplicate_ship(ATLAS, [NOVA])
+    assert not is_duplicate_ship(ATLAS.ship_id, [NOVA])
 
 
 def test_no_ships_registered_means_no_duplicate() -> None:
-    assert not is_duplicate_ship(ATLAS, [])
+    assert not is_duplicate_ship(ATLAS.ship_id, [])
 
 
 def test_same_id_with_different_details_is_still_duplicate() -> None:
     renamed = Ship(ATLAS.ship_id, "Other name", "2026-10-15T08:00", 300, 0)
-    assert is_duplicate_ship(renamed, [ATLAS])
+    with pytest.raises(ValueError, match="has already been registered"):
+        register_ship(renamed, [ATLAS])
 
 
 def test_remaining_capacity() -> None:
@@ -88,8 +89,22 @@ def test_register_does_not_change_the_original_list() -> None:
 
 def test_register_zero_capacity_is_refused() -> None:
     no_room = Ship("IMO9000001", "Empty", "2026-10-14T09:30", 0, 0)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="capacity must be positive, got 0"):
         register_ship(no_room, [])
+
+
+@pytest.mark.parametrize("ship_id", ["", "   "])
+def test_register_empty_ship_id_is_refused(ship_id: str) -> None:
+    no_id = Ship(ship_id, "Atlas", "2026-10-14T09:30", ATLAS_CAPACITY, 40)
+    with pytest.raises(ValueError, match="ship ID must not be empty"):
+        register_ship(no_id, [])
+
+
+@pytest.mark.parametrize("name", ["", "   "])
+def test_register_empty_ship_name_is_refused(name: str) -> None:
+    no_name = Ship("IMO9074729", name, "2026-10-14T09:30", ATLAS_CAPACITY, 40)
+    with pytest.raises(ValueError, match="ship name must not be empty"):
+        register_ship(no_name, [])
 
 
 def test_describe_ship_shows_id_name_arrival_and_cargo() -> None:

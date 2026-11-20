@@ -49,7 +49,7 @@ def test_dock_ship_leaves_the_original_list_unchanged() -> None:
 
 
 def test_ship_too_big_for_dock_is_refused() -> None:
-    with pytest.raises(ValueError, match="takes at most 300"):
+    with pytest.raises(ValueError, match="has capacity 500, dock South takes at most 300"):
         dock_ship(ATLAS, SOUTH, DOCKED_AT, [])
 
 

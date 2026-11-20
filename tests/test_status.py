@@ -7,10 +7,12 @@ from ship_port_management.status import (
     available_docks,
     current_dock_id,
     describe_fill_level,
+    describe_port_summary,
     describe_ship_location,
     fill_percentage,
     format_port_status,
     format_section,
+    stored_percentage,
 )
 from ship_port_management.warehouses import Warehouse
 
@@ -98,3 +100,22 @@ def test_port_status_lists_only_free_docks() -> None:
     dock_lines = [line for line in lines if "Dock id:" in line]
     assert len(dock_lines) == 1
     assert "D2" in dock_lines[0]
+
+
+def test_stored_percentage_of_all_warehouses_together() -> None:
+    assert stored_percentage([HALF_FULL, EMPTY]) == 25
+
+
+def test_stored_percentage_without_warehouses_is_zero() -> None:
+    assert stored_percentage([]) == 0
+
+
+def test_port_summary_counts_ships_free_docks_and_storage() -> None:
+    summary = describe_port_summary(
+        [ATLAS, NOVA], [NORTH_DOCK, SOUTH_DOCK], [HALF_FULL], [ATLAS_AT_NORTH]
+    )
+    assert summary == "2 ships · 1/2 docks free · 50% stored"
+
+
+def test_port_summary_says_ship_for_one_ship() -> None:
+    assert describe_port_summary([ATLAS], [], [], []).startswith("1 ship ·")
