@@ -26,23 +26,24 @@ def free_units(warehouse: Warehouse) -> int:
     return warehouse.capacity - warehouse.stored_units
 
 
-def is_duplicate_warehouse(warehouse_id: str, existing_warehouse_ids: set[str]) -> bool:
-    return warehouse_id in existing_warehouse_ids
+def is_duplicate_warehouse(warehouse_id: str, warehouses: list[Warehouse]) -> bool:
+    return any(warehouse.warehouse_id == warehouse_id for warehouse in warehouses)
 
 
 def add_warehouse(new_warehouse: Warehouse, warehouses: list[Warehouse]) -> list[Warehouse]:
+    if not new_warehouse.warehouse_id.strip():
+        raise ValueError("warehouse ID must not be empty")
     if not is_valid_storage_capacity(new_warehouse.capacity):
         raise ValueError(f"capacity must be positive, got {new_warehouse.capacity}")
     if not is_valid_daily_rate(new_warehouse.daily_rate_per_unit):
         raise ValueError(
-            f"daily rate must be a positive number, got {new_warehouse.daily_rate_per_unit}"
+            f"daily rate must be a positive, finite number, got {new_warehouse.daily_rate_per_unit}"
         )
     if not stored_within_capacity(new_warehouse):
         raise ValueError(
             f"stored units must be between 0 and capacity, got {new_warehouse.stored_units}"
         )
-    existing_ids = {warehouse.warehouse_id for warehouse in warehouses}
-    if is_duplicate_warehouse(new_warehouse.warehouse_id, existing_ids):
+    if is_duplicate_warehouse(new_warehouse.warehouse_id, warehouses):
         raise ValueError(f"warehouse {new_warehouse.warehouse_id} is already registered")
     return warehouses + [new_warehouse]
 
