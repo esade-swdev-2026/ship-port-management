@@ -1,6 +1,7 @@
 import csv
 from pathlib import Path
 
+from ship_port_management.departures import Departure
 from ship_port_management.dockings import Docking
 from ship_port_management.docks import Dock
 from ship_port_management.ships import Ship
@@ -40,6 +41,15 @@ STORED_CARGO_UNITS = 2
 STORED_CARGO_AT = 3
 STORED_CARGO_HEADER = ["ship_id", "warehouse_id", "units", "stored_at"]
 STORED_CARGO_FIELDS_PER_ROW = len(STORED_CARGO_HEADER)
+
+DEPARTURE_SHIP_ID = 0
+DEPARTURE_DOCK_ID = 1
+DEPARTURE_DOCKED_AT = 2
+DEPARTURE_DEPARTED_AT = 3
+DEPARTURE_HOURS = 4
+DEPARTURE_DOCKING_FEE = 5
+DEPARTURE_HEADER = ["ship_id", "dock_id", "docked_at", "departed_at", "hours", "docking_fee"]
+DEPARTURE_FIELDS_PER_ROW = len(DEPARTURE_HEADER)
 
 
 def read_ships(path: Path) -> list[Ship]:
@@ -198,3 +208,44 @@ def write_stored_cargo(path: Path, stored: list[StoredCargo]) -> None:
         writer.writerow(STORED_CARGO_HEADER)
         for cargo in stored:
             writer.writerow([cargo.ship_id, cargo.warehouse_id, cargo.units, cargo.stored_at])
+
+
+def read_departures(path: Path) -> list[Departure]:
+    if not path.exists():
+        return []
+    departures: list[Departure] = []
+    with path.open(newline="") as handle:
+        reader = csv.reader(handle)
+        next(reader, None)
+        for row in reader:
+            if len(row) != DEPARTURE_FIELDS_PER_ROW:
+                raise ValueError(f"malformed row in {path}: {row}")
+            departures.append(
+                Departure(
+                    ship_id=row[DEPARTURE_SHIP_ID],
+                    dock_id=row[DEPARTURE_DOCK_ID],
+                    docked_at=row[DEPARTURE_DOCKED_AT],
+                    departed_at=row[DEPARTURE_DEPARTED_AT],
+                    hours=int(row[DEPARTURE_HOURS]),
+                    docking_fee=float(row[DEPARTURE_DOCKING_FEE]),
+                )
+            )
+    return departures
+
+
+def write_departures(path: Path, departures: list[Departure]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(DEPARTURE_HEADER)
+        for departure in departures:
+            writer.writerow(
+                [
+                    departure.ship_id,
+                    departure.dock_id,
+                    departure.docked_at,
+                    departure.departed_at,
+                    departure.hours,
+                    departure.docking_fee,
+                ]
+            )
