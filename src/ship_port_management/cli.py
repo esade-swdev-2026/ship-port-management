@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import typer
@@ -225,11 +226,26 @@ def port_status() -> None:
         typer.echo(line)
 
 
+def require_terminal(command: str) -> None:
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        typer.echo(f"{command} needs a terminal: with Docker, run it with docker run -it", err=True)
+        raise typer.Exit(code=1)
+
+
 @app.command()
-def tui() -> None:
+def tui(vim: bool = False) -> None:
+    require_terminal("tui")
     from ship_port_management.tui import HarbourApp
 
-    HarbourApp().run()
+    HarbourApp(vim=vim).run()
+
+
+@app.command()
+def tutor() -> None:
+    require_terminal("tutor")
+    from ship_port_management.tutor import run_tutor
+
+    run_tutor()
 
 
 if __name__ == "__main__":

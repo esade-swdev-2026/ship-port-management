@@ -90,8 +90,14 @@ Storage
 | `--as-of TIME` | When to calculate the fees up to (default now) |
 | `port-status` | Shows every ship and its dock, the free docks and how full each warehouse is |
 | `tui` | Opens the terminal interface: tabs for ships, docks, warehouses and fees, `n` new, `d` dock, `u` unload, `l` load, `q` quit |
+| `--vim` | Starts the terminal interface in vim mode (`v` switches it on and off inside) |
+| `tutor` | A hands-on lesson in the terminal interface and its vim mode, on a practice port that is thrown away afterwards |
 | `--help` | Shows all commands and options |
 
+
+In vim mode `j`/`k` move between rows, `gg`/`G` jump to the first and last row, `ctrl+d`/`ctrl+u` move half a page,
+and `h`/`l` switch tabs. Because `l` switches tabs, loading cargo moves to `p` (put). In a form, `esc` goes to
+normal mode, where `j`/`k` pick a box, `i`/`a` start typing in it, `enter` saves and `q` cancels.
 
 Ships are saved in `data/ships.csv`, docks in `data/docks.csv`, which ship is at which
 dock in `data/dockings.csv`, warehouses in `data/warehouses.csv` and which ship's cargo
@@ -136,9 +142,10 @@ If they pass here, CI passes.
 
 ```
 src/ship_port_management/   the package
-  cli.py                    typer commands: the only module that prints or exits
+  cli.py                    typer commands: the command-line entry point, and the only module that exits
   tui.py                    Textual interface over the same cli commands
   ship_art.py               a container ship with coloured crates, waves and smoke in Braille dots
+  tutor.py                  the tutor command: lessons that move on as you do each step
   ships.py                  Ship and the rules for registering one
   docks.py                  Dock and the rules for adding one
   dockings.py               Docking a ship: size check, no double booking

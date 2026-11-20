@@ -2,10 +2,10 @@ import asyncio
 from pathlib import Path
 
 import pytest
-from textual.widgets import DataTable, Input, Label
+from textual.widgets import DataTable, Input, Label, TabbedContent
 
 from ship_port_management import cli
-from ship_port_management.tui import FormScreen, HarbourApp, fill_bar, run_command
+from ship_port_management.tui import FormScreen, HarbourApp, HelpScreen, fill_bar, run_command
 
 
 @pytest.fixture(autouse=True)
@@ -136,3 +136,200 @@ def test_dock_form_starts_with_the_selected_ship() -> None:
             return app.screen.query_one("#field-ship_id", Input).value
 
     assert asyncio.run(scenario()) == "MV-ATLAS"
+
+
+def ship_cursor_row(app: HarbourApp) -> int:
+    return app.query_one("#ships-table", DataTable).cursor_row
+
+
+def register_three_ships() -> None:
+    for ship_id in ("MV-ATLAS", "MV-NOVA", "MV-ORION"):
+        cli.register_vessel(ship_id, ship_id.title(), 500, 0, "2026-10-18T09:30")
+
+
+def test_vim_keys_do_nothing_until_vim_mode_is_on() -> None:
+    register_three_ships()
+
+    async def scenario() -> int:
+        app = HarbourApp()
+        async with app.run_test() as pilot:
+            await pilot.press("j", "j")
+            return ship_cursor_row(app)
+
+    assert asyncio.run(scenario()) == 0
+
+
+def test_v_turns_vim_mode_on_and_off() -> None:
+    async def scenario() -> list[str]:
+        app = HarbourApp()
+        summaries = []
+        async with app.run_test() as pilot:
+            for _ in range(2):
+                await pilot.press("v")
+                await pilot.pause()
+                summaries.append(str(app.query_one("#summary", Label).render()))
+        return summaries
+
+    turned_on, turned_off = asyncio.run(scenario())
+    assert turned_on.endswith("· vim")
+    assert not turned_off.endswith("· vim")
+
+
+def test_vim_j_k_move_between_rows() -> None:
+    register_three_ships()
+
+    async def scenario() -> list[int]:
+        app = HarbourApp(vim=True)
+        rows = []
+        async with app.run_test() as pilot:
+            for key in ("j", "j", "j", "k"):
+                await pilot.press(key)
+                rows.append(ship_cursor_row(app))
+        return rows
+
+    assert asyncio.run(scenario()) == [1, 2, 2, 1]
+
+
+def test_vim_capital_g_and_gg_jump_to_last_and_first_row() -> None:
+    register_three_ships()
+
+    async def scenario() -> list[int]:
+        app = HarbourApp(vim=True)
+        async with app.run_test() as pilot:
+            await pilot.press("G")
+            last = ship_cursor_row(app)
+            await pilot.press("g")
+            after_one_g = ship_cursor_row(app)
+            await pilot.press("g")
+            return [last, after_one_g, ship_cursor_row(app)]
+
+    assert asyncio.run(scenario()) == [2, 2, 0]
+
+
+def test_vim_h_l_move_between_tabs() -> None:
+    async def scenario() -> list[str]:
+        app = HarbourApp(vim=True)
+        tabs = app.query_one
+        seen = []
+        async with app.run_test() as pilot:
+            for key in ("l", "l", "h", "h", "h"):
+                await pilot.press(key)
+                seen.append(tabs(TabbedContent).active)
+        return seen
+
+    assert asyncio.run(scenario()) == ["docks", "warehouses", "docks", "ships", "ships"]
+
+
+def test_l_loads_normally_and_p_loads_in_vim_mode() -> None:
+    async def form_title(vim: bool, key: str) -> str:
+        app = HarbourApp(vim=vim)
+        async with app.run_test() as pilot:
+            await pilot.press(key)
+            await pilot.pause()
+            assert isinstance(app.screen, FormScreen)
+            return app.screen.form.title
+
+    assert asyncio.run(form_title(False, "l")) == "Load cargo"
+    assert asyncio.run(form_title(True, "p")) == "Load cargo"
+
+
+def test_typing_vim_keys_into_a_form_only_types_them() -> None:
+    async def scenario() -> str:
+        app = HarbourApp(vim=True)
+        async with app.run_test() as pilot:
+            await pilot.press("n")
+            await pilot.press(*"jklhgq")
+            await pilot.pause()
+            assert isinstance(app.screen, FormScreen)
+            return app.screen.query_one("#field-ship_id", Input).value
+
+    assert asyncio.run(scenario()) == "jklhgq"
+
+
+def test_vim_form_normal_mode_moves_between_boxes_and_saves() -> None:
+    async def scenario() -> None:
+        app = HarbourApp(vim=True)
+        async with app.run_test() as pilot:
+            await pilot.press("n", *"MV-ATLAS", "escape", "j", "i", *"Atlas")
+            await pilot.press("escape", "j", "a", *"500", "escape", "enter")
+            await pilot.pause()
+            assert not isinstance(app.screen, FormScreen)
+
+    asyncio.run(scenario())
+    assert "MV-ATLAS,Atlas" in Path("data/ships.csv").read_text()
+
+
+def test_vim_form_q_in_normal_mode_cancels() -> None:
+    async def scenario() -> bool:
+        app = HarbourApp(vim=True)
+        async with app.run_test() as pilot:
+            await pilot.press("n", "escape", "q")
+            await pilot.pause()
+            return isinstance(app.screen, FormScreen)
+
+    assert not asyncio.run(scenario())
+
+
+def form_texts(app: HarbourApp, css_class: str) -> list[str]:
+    return [str(label.render()) for label in app.screen.query(f".{css_class}").results(Label)]
+
+
+def test_bad_input_keeps_the_form_open_with_the_error_inside() -> None:
+    async def scenario() -> tuple[bool, str]:
+        app = HarbourApp()
+        async with app.run_test() as pilot:
+            await pilot.press("n")
+            fill_form(app, {"ship_id": "MV-ATLAS", "name": "Atlas", "capacity": "0"})
+            await pilot.press("enter")
+            await pilot.pause()
+            error = str(app.screen.query_one("#form-error", Label).render())
+            return isinstance(app.screen, FormScreen), error
+
+    still_open, error = asyncio.run(scenario())
+    assert still_open
+    assert error == "could not register MV-ATLAS: capacity must be positive, got 0"
+
+
+def test_optional_boxes_are_labelled_and_time_boxes_say_empty_means_now() -> None:
+    async def scenario() -> tuple[list[str], list[str], str]:
+        app = HarbourApp()
+        async with app.run_test() as pilot:
+            await pilot.press("n")
+            placeholder = app.screen.query_one("#field-arrival_time", Input).placeholder
+            return form_texts(app, "field-label"), form_texts(app, "field-note"), placeholder
+
+    labels, notes, placeholder = asyncio.run(scenario())
+    assert "cargo on board (units) (optional)" in labels
+    assert "arrival time (optional)" in labels
+    assert "e.g. 2026-10-18T09:30, empty = now" in notes
+    assert placeholder == "empty = now"
+
+
+def test_dock_form_lists_waiting_ships_and_free_docks() -> None:
+    register_three_ships()
+    cli.add_dock("D1", 500, 120)
+    cli.add_dock("D2", 500, 90)
+    cli.dock_vessel("MV-ATLAS", "D1", "2026-10-18T10:00")
+
+    async def scenario() -> list[str]:
+        app = HarbourApp()
+        async with app.run_test() as pilot:
+            await pilot.press("d")
+            await pilot.pause()
+            return form_texts(app, "field-note")
+
+    notes = asyncio.run(scenario())
+    assert "ships waiting: MV-NOVA, MV-ORION" in notes
+    assert "free docks: D2" in notes
+
+
+def test_question_mark_shows_the_keys_and_escape_closes_them() -> None:
+    async def scenario() -> list[bool]:
+        app = HarbourApp()
+        async with app.run_test() as pilot:
+            await pilot.press("question_mark")
+            opened = isinstance(app.screen, HelpScreen)
+            await pilot.press("escape")
+            return [opened, isinstance(app.screen, HelpScreen)]
+
+    assert asyncio.run(scenario()) == [True, False]
