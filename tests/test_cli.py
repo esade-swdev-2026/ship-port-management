@@ -216,7 +216,8 @@ def test_storage_fees_with_invalid_time_fails_with_message() -> None:
     assert "fee time must look like" in result.output
 
 
-def test_tui_without_a_terminal_says_how_to_run_it() -> None:
-    result = runner.invoke(app, ["tui"])
+@pytest.mark.parametrize("command", ["tui", "tutor"])
+def test_interface_without_a_terminal_says_how_to_run_it(command: str) -> None:
+    result = runner.invoke(app, [command])
     assert result.exit_code == 1
-    assert "tui needs a terminal: with Docker, run it with docker run -it" in result.output
+    assert f"{command} needs a terminal: with Docker, run it with docker run -it" in result.output
