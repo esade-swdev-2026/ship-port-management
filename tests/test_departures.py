@@ -82,3 +82,10 @@ def test_describe_departure_shows_the_hours_and_fee() -> None:
     assert describe_departure(departure) == (
         "IMO9074729 left North after 6 hours, docking fee 720.00"
     )
+
+
+def test_describe_departure_says_hour_for_a_single_hour() -> None:
+    departure = Departure("IMO9074729", "North", DOCKED_AT, "2026-10-14T10:01", 1, 120.0)
+    assert describe_departure(departure) == (
+        "IMO9074729 left North after 1 hour, docking fee 120.00"
+    )
