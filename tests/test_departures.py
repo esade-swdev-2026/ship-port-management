@@ -5,6 +5,7 @@ from ship_port_management.departures import (
     depart_ship,
     describe_departure,
     hours_at_dock,
+    record_departure,
 )
 from ship_port_management.dockings import Docking
 from ship_port_management.docks import Dock
@@ -89,3 +90,28 @@ def test_describe_departure_says_hour_for_a_single_hour() -> None:
     assert describe_departure(departure) == (
         "IMO9074729 left North after 1 hour, docking fee 120.00"
     )
+
+
+def test_record_departure_adds_it_at_the_end() -> None:
+    departure = Departure("IMO9074729", "North", DOCKED_AT, "2026-10-14T12:00", 2, 240.0)
+    assert record_departure(departure, []) == [departure]
+
+
+@pytest.mark.parametrize("hours", [-2, 5])
+def test_departure_with_hours_that_do_not_match_the_times_is_refused(hours: int) -> None:
+    departure = Departure("IMO9074729", "North", DOCKED_AT, "2026-10-14T12:00", hours, 240.0)
+    with pytest.raises(ValueError, match="hours must be 2"):
+        record_departure(departure, [])
+
+
+@pytest.mark.parametrize("docking_fee", [float("nan"), float("inf"), -240.0])
+def test_departure_with_an_impossible_fee_is_refused(docking_fee: float) -> None:
+    departure = Departure("IMO9074729", "North", DOCKED_AT, "2026-10-14T12:00", 2, docking_fee)
+    with pytest.raises(ValueError, match="docking fee must be a number of 0 or more"):
+        record_departure(departure, [])
+
+
+def test_departure_recorded_before_docking_is_refused() -> None:
+    departure = Departure("IMO9074729", "North", DOCKED_AT, "2026-10-14T09:00", 0, 0.0)
+    with pytest.raises(ValueError, match="before docking time"):
+        record_departure(departure, [])

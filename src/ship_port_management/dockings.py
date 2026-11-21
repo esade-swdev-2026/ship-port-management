@@ -24,18 +24,23 @@ def is_ship_docked(ship_id: str, dockings: list[Docking]) -> bool:
     return any(docking.ship_id == ship_id for docking in dockings)
 
 
+def record_docking(new_docking: Docking, dockings: list[Docking]) -> list[Docking]:
+    if new_docking.dock_id in occupied_dock_ids(dockings):
+        raise ValueError(f"dock {new_docking.dock_id} is already occupied")
+    if is_ship_docked(new_docking.ship_id, dockings):
+        raise ValueError(f"ship {new_docking.ship_id} is already docked")
+    parse_time(new_docking.docked_at, "docking time")
+    return dockings + [new_docking]
+
+
 def dock_ship(ship: Ship, dock: Dock, docked_at: str, dockings: list[Docking]) -> list[Docking]:
     if not ship_fits_dock(ship, dock):
         raise ValueError(
             f"ship {ship.ship_id} has capacity {ship.capacity}, "
             f"dock {dock.dock_id} takes at most {dock.max_ship_size}"
         )
-    if dock.dock_id in occupied_dock_ids(dockings):
-        raise ValueError(f"dock {dock.dock_id} is already occupied")
-    if is_ship_docked(ship.ship_id, dockings):
-        raise ValueError(f"ship {ship.ship_id} is already docked")
     if parse_time(docked_at, "docking time") < parse_time(ship.arrival_time, "arrival time"):
         raise ValueError(
             f"docking time ({docked_at}) can't be before arrival time ({ship.arrival_time})"
         )
-    return dockings + [Docking(ship.ship_id, dock.dock_id, docked_at)]
+    return record_docking(Docking(ship.ship_id, dock.dock_id, docked_at), dockings)

@@ -1,12 +1,11 @@
 import csv
 from pathlib import Path
 
-from ship_port_management.departures import Departure
-from ship_port_management.dockings import Docking
+from ship_port_management.departures import Departure, record_departure
+from ship_port_management.dockings import Docking, record_docking
 from ship_port_management.docks import Dock, add_dock
 from ship_port_management.ships import Ship, register_ship
 from ship_port_management.storage import StoredCargo, store_cargo
-from ship_port_management.times import parse_time
 from ship_port_management.warehouses import Warehouse, add_warehouse
 
 SHIP_ID = 0
@@ -18,15 +17,15 @@ SHIP_HEADER = ["ship_id", "name", "arrival_time", "capacity", "cargo_units"]
 SHIP_FIELDS_PER_ROW = len(SHIP_HEADER)
 
 DOCK_ID = 0
-MAX_SHIP_SIZE = 1
-HOURLY_RATE = 2
+DOCK_MAX_SHIP_SIZE = 1
+DOCK_HOURLY_RATE = 2
 DOCK_HEADER = ["dock_id", "max_ship_size", "hourly_rate"]
 DOCK_FIELDS_PER_ROW = len(DOCK_HEADER)
 
 WAREHOUSE_ID = 0
 WAREHOUSE_CAPACITY = 1
-DAILY_RATE_PER_UNIT = 2
-STORED_UNITS = 3
+WAREHOUSE_DAILY_RATE_PER_UNIT = 2
+WAREHOUSE_STORED_UNITS = 3
 WAREHOUSE_HEADER = ["warehouse_id", "capacity", "daily_rate_per_unit", "stored_units"]
 WAREHOUSE_FIELDS_PER_ROW = len(WAREHOUSE_HEADER)
 
@@ -115,8 +114,8 @@ def read_docks(path: Path) -> list[Dock]:
             try:
                 dock = Dock(
                     dock_id=row[DOCK_ID],
-                    max_ship_size=whole_number(row[MAX_SHIP_SIZE], "max ship size"),
-                    hourly_rate=decimal_number(row[HOURLY_RATE], "hourly rate"),
+                    max_ship_size=whole_number(row[DOCK_MAX_SHIP_SIZE], "max ship size"),
+                    hourly_rate=decimal_number(row[DOCK_HOURLY_RATE], "hourly rate"),
                 )
                 docks = add_dock(dock, docks)
             except ValueError as error:
@@ -147,8 +146,10 @@ def read_warehouses(path: Path) -> list[Warehouse]:
                 warehouse = Warehouse(
                     warehouse_id=row[WAREHOUSE_ID],
                     capacity=whole_number(row[WAREHOUSE_CAPACITY], "capacity"),
-                    daily_rate_per_unit=decimal_number(row[DAILY_RATE_PER_UNIT], "daily rate"),
-                    stored_units=whole_number(row[STORED_UNITS], "stored units"),
+                    daily_rate_per_unit=decimal_number(
+                        row[WAREHOUSE_DAILY_RATE_PER_UNIT], "daily rate"
+                    ),
+                    stored_units=whole_number(row[WAREHOUSE_STORED_UNITS], "stored units"),
                 )
                 warehouses = add_warehouse(warehouse, warehouses)
             except ValueError as error:
@@ -182,17 +183,15 @@ def read_dockings(path: Path) -> list[Docking]:
         for row in reader:
             if len(row) != DOCKING_FIELDS_PER_ROW:
                 raise ValueError(f"malformed row in {path}: {row}")
+            docking = Docking(
+                ship_id=row[DOCKING_SHIP_ID],
+                dock_id=row[DOCKING_DOCK_ID],
+                docked_at=row[DOCKING_DOCKED_AT],
+            )
             try:
-                parse_time(row[DOCKING_DOCKED_AT], "docking time")
+                dockings = record_docking(docking, dockings)
             except ValueError as error:
                 raise ValueError(f"malformed row in {path}: {error}") from None
-            dockings.append(
-                Docking(
-                    ship_id=row[DOCKING_SHIP_ID],
-                    dock_id=row[DOCKING_DOCK_ID],
-                    docked_at=row[DOCKING_DOCKED_AT],
-                )
-            )
     return dockings
 
 
@@ -248,8 +247,6 @@ def read_departures(path: Path) -> list[Departure]:
             if len(row) != DEPARTURE_FIELDS_PER_ROW:
                 raise ValueError(f"malformed row in {path}: {row}")
             try:
-                parse_time(row[DEPARTURE_DOCKED_AT], "docking time")
-                parse_time(row[DEPARTURE_DEPARTED_AT], "departure time")
                 departure = Departure(
                     ship_id=row[DEPARTURE_SHIP_ID],
                     dock_id=row[DEPARTURE_DOCK_ID],
@@ -258,9 +255,9 @@ def read_departures(path: Path) -> list[Departure]:
                     hours=whole_number(row[DEPARTURE_HOURS], "hours"),
                     docking_fee=decimal_number(row[DEPARTURE_DOCKING_FEE], "docking fee"),
                 )
+                departures = record_departure(departure, departures)
             except ValueError as error:
                 raise ValueError(f"malformed row in {path}: {error}") from None
-            departures.append(departure)
     return departures
 
 

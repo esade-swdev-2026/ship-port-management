@@ -28,6 +28,12 @@ def test_store_cargo_with_invalid_time_is_refused() -> None:
         store_cargo(StoredCargo("MV-ATLAS", "W-NORTH", 30, "yesterday"), [])
 
 
+@pytest.mark.parametrize("units", [0, -30])
+def test_storing_no_units_is_refused(units: int) -> None:
+    with pytest.raises(ValueError, match="units stored must be positive"):
+        store_cargo(StoredCargo("MV-ATLAS", "W-NORTH", units, "2026-10-14T09:30"), [])
+
+
 def test_store_cargo_with_timezone_is_refused() -> None:
     with pytest.raises(ValueError, match="without a timezone"):
         store_cargo(StoredCargo("MV-ATLAS", "W-NORTH", 30, "2026-10-14T09:30+02:00"), [])

@@ -177,3 +177,40 @@ def test_departure_row_with_a_word_for_hours_is_refused(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="hours must be a whole number, got 'six'"):
         read_departures(departures_file)
+
+
+def test_stored_cargo_row_with_negative_units_is_refused(tmp_path: Path) -> None:
+    stored_cargo_file = tmp_path / "stored_cargo.csv"
+    stored_cargo_file.write_text(
+        "ship_id,warehouse_id,units,stored_at\nIMO9074729,W-NORTH,-30,2026-10-14T09:30\n"
+    )
+    with pytest.raises(ValueError, match="units stored must be positive, got -30"):
+        read_stored_cargo(stored_cargo_file)
+
+
+@pytest.mark.parametrize(
+    ("row", "message"),
+    [
+        ("IMO9074729,North,2026-10-14T10:00,2026-10-14T15:20,-6,720.0", "hours must be 6"),
+        ("IMO9074729,North,2026-10-14T10:00,2026-10-14T15:20,6,nan", "docking fee must be"),
+        ("IMO9074729,North,2026-10-14T10:00,2026-10-14T09:00,0,0.0", "before docking time"),
+    ],
+)
+def test_departure_row_that_breaks_the_rules_is_refused(
+    tmp_path: Path, row: str, message: str
+) -> None:
+    departures_file = tmp_path / "departures.csv"
+    departures_file.write_text(f"ship_id,dock_id,docked_at,departed_at,hours,docking_fee\n{row}\n")
+    with pytest.raises(ValueError, match=message):
+        read_departures(departures_file)
+
+
+def test_two_ships_at_the_same_dock_are_refused(tmp_path: Path) -> None:
+    dockings_file = tmp_path / "dockings.csv"
+    dockings_file.write_text(
+        "ship_id,dock_id,docked_at\n"
+        "IMO9074729,North,2026-10-14T12:00\n"
+        "IMO9012328,North,2026-10-14T13:30\n"
+    )
+    with pytest.raises(ValueError, match="dock North is already occupied"):
+        read_dockings(dockings_file)
