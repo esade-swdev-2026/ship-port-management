@@ -279,6 +279,17 @@ def test_unloading_cargo_stored_before_the_ship_docked_changes_nothing() -> None
     assert "used 0/200" in runner.invoke(app, ["list-warehouses"]).output
 
 
+def test_departing_before_the_last_unload_keeps_the_ship_docked() -> None:
+    dock_atlas_next_to_north_warehouse()
+    unload = ["unload-cargo", "MV-ATLAS", "W-NORTH", "30", "--stored-at", "2026-10-25T10:00"]
+    runner.invoke(app, unload)
+    depart = ["depart-vessel", "MV-ATLAS", "--departed-at", "2026-10-19T10:00"]
+    result = runner.invoke(app, depart)
+    assert result.exit_code == 1
+    assert "can't be before the last unload" in result.output
+    assert "occupied" in runner.invoke(app, ["list-docks"]).output
+
+
 def test_storage_fees_with_invalid_time_fails_with_message() -> None:
     result = runner.invoke(app, ["storage-fees", "--as-of", "later"])
     assert result.exit_code == 1

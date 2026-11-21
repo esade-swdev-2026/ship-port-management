@@ -128,6 +128,12 @@ def depart_vessel(ship_id: str, departed_at: str = "") -> None:
         result = departures.depart_ship(
             ship_id, departure_time, read_dockings(DOCKINGS_FILE), read_docks(DOCKS_FILE)
         )
+        departures.check_departed_after_last_unload(
+            ship_id,
+            result.departure.docked_at,
+            departure_time,
+            read_stored_cargo(STORED_CARGO_FILE),
+        )
         recorded_departures = read_departures(DEPARTURES_FILE)
         write_dockings(DOCKINGS_FILE, result.dockings)
         write_departures(DEPARTURES_FILE, recorded_departures + [result.departure])

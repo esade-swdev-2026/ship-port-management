@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 from ship_port_management.dockings import Docking
 from ship_port_management.docks import Dock, find_dock
+from ship_port_management.storage import StoredCargo
 from ship_port_management.times import parse_time
 
 SECONDS_PER_HOUR = 3600
@@ -56,6 +57,24 @@ def check_docked_after_last_departure(
     if parse_time(docked_at, "docking time") < parse_time(last.departed_at, "departure time"):
         raise ValueError(
             f"docking time ({docked_at}) can't be before the last departure ({last.departed_at})"
+        )
+
+
+def check_departed_after_last_unload(
+    ship_id: str, docked_at: str, departed_at: str, stored: list[StoredCargo]
+) -> None:
+    docking_time = parse_time(docked_at, "docking time")
+    unload_times = [
+        cargo.stored_at
+        for cargo in stored
+        if cargo.ship_id == ship_id and parse_time(cargo.stored_at, "storage time") >= docking_time
+    ]
+    if not unload_times:
+        return
+    last_unload = max(unload_times, key=lambda stored_at: parse_time(stored_at, "storage time"))
+    if parse_time(departed_at, "departure time") < parse_time(last_unload, "storage time"):
+        raise ValueError(
+            f"departure time ({departed_at}) can't be before the last unload ({last_unload})"
         )
 
 
