@@ -42,8 +42,8 @@ def is_dock_available(dock: Dock, occupied_dock_ids: set[str]) -> bool:
 def describe_dock(dock: Dock, occupied_dock_ids: set[str]) -> str:
     status = "available" if is_dock_available(dock, occupied_dock_ids) else "occupied"
     return (
-        f"Dock id: {dock.dock_id}, Max ship size = {dock.max_ship_size}, "
-        f"Hourly rate: {dock.hourly_rate}, Status: {status}"
+        f"{dock.dock_id}  max ship size {dock.max_ship_size}  "
+        f"rate {dock.hourly_rate} per hour  {status}"
     )
 
 
