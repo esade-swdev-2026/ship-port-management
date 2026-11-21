@@ -5,7 +5,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Dock:
     dock_id: str
-    max_ship_size: int  # the largest ship capacity, in cargo units, the dock can take
+    max_ship_size: int
     hourly_rate: float
 
 

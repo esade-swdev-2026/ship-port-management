@@ -7,7 +7,7 @@ from ship_port_management.times import parse_time
 class Ship:
     ship_id: str
     name: str
-    arrival_time: str  # ISO text, e.g. "2026-10-14T09:30"
+    arrival_time: str
     capacity: int
     cargo_units: int
 
