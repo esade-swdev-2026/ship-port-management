@@ -297,6 +297,34 @@ def test_departing_before_the_last_unload_keeps_the_ship_docked() -> None:
     assert "occupied" in runner.invoke(app, ["list-docks"]).output
 
 
+def test_visit_history_with_no_departures() -> None:
+    result = runner.invoke(app, ["visit-history"])
+    assert result.exit_code == 0
+    assert "no visits yet" in result.output
+
+
+def test_visit_history_shows_the_cargo_moved_and_the_fee() -> None:
+    dock_atlas_next_to_north_warehouse()
+    unload = ["unload-cargo", "MV-ATLAS", "W-NORTH", "30", "--stored-at", "2026-10-18T11:00"]
+    runner.invoke(app, unload)
+    runner.invoke(app, ["load-cargo", "MV-ATLAS", "W-NORTH", "10"])
+    runner.invoke(app, DEPART_ATLAS)
+    result = runner.invoke(app, ["visit-history"])
+    assert result.exit_code == 0
+    assert (
+        "MV-ATLAS  arrived 2026-10-18T09:30  at D1 from 2026-10-18T10:00 to 2026-10-18T15:20  "
+        "unloaded 30  loaded 10  docking fee 720.00"
+    ) in result.output
+
+
+def test_visit_history_with_a_corrupt_transfers_file_fails_cleanly() -> None:
+    Path("data").mkdir()
+    Path("data/cargo_transfers.csv").write_text("ship_id,docked_at\nMV-ATLAS\n")
+    result = runner.invoke(app, ["visit-history"])
+    assert result.exit_code == 1
+    assert "could not show the visit history" in result.output
+
+
 def test_storage_fees_with_invalid_time_fails_with_message() -> None:
     result = runner.invoke(app, ["storage-fees", "--as-of", "later"])
     assert result.exit_code == 1

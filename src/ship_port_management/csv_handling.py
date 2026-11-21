@@ -6,6 +6,8 @@ from ship_port_management.dockings import Docking, record_docking
 from ship_port_management.docks import Dock, add_dock
 from ship_port_management.ships import Ship, register_ship
 from ship_port_management.storage import StoredCargo, store_cargo
+from ship_port_management.times import parse_time
+from ship_port_management.visits import CargoTransfer, record_transfer
 from ship_port_management.warehouses import Warehouse, add_warehouse
 
 SHIP_ID = 0
@@ -50,6 +52,14 @@ DEPARTURE_HOURS = 4
 DEPARTURE_DOCKING_FEE = 5
 DEPARTURE_HEADER = ["ship_id", "dock_id", "docked_at", "departed_at", "hours", "docking_fee"]
 DEPARTURE_FIELDS_PER_ROW = len(DEPARTURE_HEADER)
+
+TRANSFER_SHIP_ID = 0
+TRANSFER_DOCKED_AT = 1
+TRANSFER_WAREHOUSE_ID = 2
+TRANSFER_DIRECTION = 3
+TRANSFER_UNITS = 4
+TRANSFER_HEADER = ["ship_id", "docked_at", "warehouse_id", "direction", "units"]
+TRANSFER_FIELDS_PER_ROW = len(TRANSFER_HEADER)
 
 
 def whole_number(text: str, column: str) -> int:
@@ -275,5 +285,47 @@ def write_departures(path: Path, departures: list[Departure]) -> None:
                     departure.departed_at,
                     departure.hours,
                     departure.docking_fee,
+                ]
+            )
+
+
+def read_transfers(path: Path) -> list[CargoTransfer]:
+    if not path.exists():
+        return []
+    transfers: list[CargoTransfer] = []
+    with path.open(newline="") as handle:
+        reader = csv.reader(handle)
+        next(reader, None)
+        for row in reader:
+            if len(row) != TRANSFER_FIELDS_PER_ROW:
+                raise ValueError(f"malformed row in {path}: {row}")
+            try:
+                parse_time(row[TRANSFER_DOCKED_AT], "docking time")
+                transfer = CargoTransfer(
+                    ship_id=row[TRANSFER_SHIP_ID],
+                    docked_at=row[TRANSFER_DOCKED_AT],
+                    warehouse_id=row[TRANSFER_WAREHOUSE_ID],
+                    direction=row[TRANSFER_DIRECTION],
+                    units=whole_number(row[TRANSFER_UNITS], "units"),
+                )
+                transfers = record_transfer(transfer, transfers)
+            except ValueError as error:
+                raise ValueError(f"malformed row in {path}: {error}") from None
+    return transfers
+
+
+def write_transfers(path: Path, transfers: list[CargoTransfer]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(TRANSFER_HEADER)
+        for transfer in transfers:
+            writer.writerow(
+                [
+                    transfer.ship_id,
+                    transfer.docked_at,
+                    transfer.warehouse_id,
+                    transfer.direction,
+                    transfer.units,
                 ]
             )

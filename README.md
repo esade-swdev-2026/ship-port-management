@@ -16,8 +16,9 @@ one, never more than the ship carries, the warehouse holds, or either has room f
 Cargo kept in a warehouse is free for the first 3 days; after that each ship is charged
 the warehouse's daily rate for every unit of its cargo, for every full day past the free period.
 
-`port-status` shows the whole port at once, and `tui` opens the same commands in a terminal
-interface with tabs and forms.
+`visit-history` lists every past visit with its arrival, docking and departure times, the
+cargo unloaded and loaded during it and its docking fee. `port-status` shows the whole port at
+once, and `tui` opens the same commands in a terminal interface with tabs and forms.
 
 ## Who is this for
 This project is for port managers to track the activity in their ports, while making sure incoming movement is valid.
@@ -54,6 +55,7 @@ uv run ship-port-management list-warehouses
 uv run ship-port-management storage-fees --as-of 2026-10-23T10:00
 uv run ship-port-management port-status
 uv run ship-port-management depart-vessel MV-ATLAS --departed-at 2026-10-23T12:00
+uv run ship-port-management visit-history
 ```
 
 ```
@@ -76,6 +78,7 @@ Available docks
 Storage
   W-NORTH  20/200 units  10% full
 MV-ATLAS left D1 after 123 hours, docking fee 14760.00
+MV-ATLAS  arrived 2026-10-18T09:30  at D1 from 2026-10-18T09:30 to 2026-10-23T12:00  unloaded 30  loaded 10  docking fee 14760.00
 ```
 
 | Command | What it does |
@@ -89,6 +92,7 @@ MV-ATLAS left D1 after 123 hours, docking fee 14760.00
 | `--docked-at TIME` | When it docked, e.g. `2026-11-03T10:00` (default now); not before the ship's arrival |
 | `depart-vessel SHIP_ID` | Frees the ship's dock and shows the docking fee (hourly rate x started hours) |
 | `--departed-at TIME` | When it left, e.g. `2026-10-18T15:20` (default now); not before it docked |
+| `visit-history` | Shows every past visit: arrival, docking and departure times, cargo unloaded and loaded, and the docking fee |
 | `list-docks` | Shows every dock and if it is available or occupied |
 | `add-warehouse WAREHOUSE_ID CAPACITY DAILY_RATE_PER_UNIT` | Adds a warehouse (capacity in cargo units, rate per unit per day) |
 | `list-warehouses` | Shows every warehouse with its used and free units |
@@ -104,8 +108,9 @@ MV-ATLAS left D1 after 123 hours, docking fee 14760.00
 
 Ships are saved in `data/ships.csv`, docks in `data/docks.csv`, which ship is at which
 dock in `data/dockings.csv`, warehouses in `data/warehouses.csv`, which ship's cargo
-is in which warehouse since when in `data/stored_cargo.csv` and departed visits with their
-docking fee in `data/departures.csv`. Delete the `data` folder to start with an empty port.
+is in which warehouse since when in `data/stored_cargo.csv`, departed visits with their
+docking fee in `data/departures.csv` and every unload and load, with the visit it belongs to,
+in `data/cargo_transfers.csv`. Delete the `data` folder to start with an empty port.
 
 Bad input is refused with a message and exit code 1, for example cargo over capacity:
 
@@ -163,12 +168,13 @@ src/ship_port_management/   the package
   docks.py                  Dock and the rules for adding one
   dockings.py               Docking a ship: size check, no double booking
   departures.py             Ship departures: freeing the dock and the docking fee
+  visits.py                 Past visits: the cargo moved during each one, and the visit history
   cargo.py                  Loading and unloading cargo between docked ships and warehouses
   warehouses.py             Warehouse (storage area): capacity, used and free units
   storage.py                Whose cargo is stored where since when, and the storage fees owed
   status.py                 What port-status shows: ships and their docks, free docks, warehouse fill
   times.py                  Reading and checking times like 2026-10-18T09:30, and the current time
-  csv_handling.py           reads, checks and writes the ships, docks, dockings, warehouses, stored cargo and departures CSV files
+  csv_handling.py           reads, checks and writes the ships, docks, dockings, warehouses, stored cargo, departures and cargo transfers CSV files
   __main__.py               lets `python -m ship_port_management` work
 tests/                      pytest tests, one file per module
 pyproject.toml              dependencies and tool configuration, the single source of truth
