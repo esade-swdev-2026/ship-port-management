@@ -2,6 +2,7 @@ import pytest
 
 from ship_port_management.departures import (
     Departure,
+    check_docked_after_last_departure,
     depart_ship,
     describe_departure,
     hours_at_dock,
@@ -89,3 +90,19 @@ def test_describe_departure_says_hour_for_a_single_hour() -> None:
     assert describe_departure(departure) == (
         "IMO9074729 left North after 1 hour, docking fee 120.00"
     )
+
+
+ATLAS_LEFT_AT_NOON = Departure("IMO9074729", "North", DOCKED_AT, "2026-10-14T12:00", 2, 240.0)
+
+
+def test_docking_again_before_the_last_departure_is_refused() -> None:
+    with pytest.raises(ValueError, match="can't be before the last departure"):
+        check_docked_after_last_departure("IMO9074729", "2026-10-14T11:00", [ATLAS_LEFT_AT_NOON])
+
+
+def test_docking_again_after_the_last_departure_is_allowed() -> None:
+    check_docked_after_last_departure("IMO9074729", "2026-10-14T13:00", [ATLAS_LEFT_AT_NOON])
+
+
+def test_other_ships_departures_do_not_matter() -> None:
+    check_docked_after_last_departure("IMO9012328", "2026-10-14T11:00", [ATLAS_LEFT_AT_NOON])

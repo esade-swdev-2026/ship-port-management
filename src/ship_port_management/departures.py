@@ -43,6 +43,22 @@ def find_docking(ship_id: str, dockings: list[Docking]) -> Docking:
     raise ValueError(f"ship {ship_id} is not docked")
 
 
+def check_docked_after_last_departure(
+    ship_id: str, docked_at: str, departures: list[Departure]
+) -> None:
+    ship_departures = [departure for departure in departures if departure.ship_id == ship_id]
+    if not ship_departures:
+        return
+    last = max(
+        ship_departures,
+        key=lambda departure: parse_time(departure.departed_at, "departure time"),
+    )
+    if parse_time(docked_at, "docking time") < parse_time(last.departed_at, "departure time"):
+        raise ValueError(
+            f"docking time ({docked_at}) can't be before the last departure ({last.departed_at})"
+        )
+
+
 def depart_ship(
     ship_id: str, departed_at: str, dockings: list[Docking], docks: list[Dock]
 ) -> DepartureResult:

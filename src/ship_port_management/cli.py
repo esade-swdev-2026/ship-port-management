@@ -110,9 +110,11 @@ def dock_vessel(ship_id: str, dock_id: str, docked_at: str = "") -> None:
         ship = ships.find_ship(ship_id, read_ships(SHIPS_FILE))
         dock = docks.find_dock(dock_id, read_docks(DOCKS_FILE))
         current_dockings = read_dockings(DOCKINGS_FILE)
-        write_dockings(
-            DOCKINGS_FILE, dockings.dock_ship(ship, dock, docking_time, current_dockings)
+        new_dockings = dockings.dock_ship(ship, dock, docking_time, current_dockings)
+        departures.check_docked_after_last_departure(
+            ship_id, docking_time, read_departures(DEPARTURES_FILE)
         )
+        write_dockings(DOCKINGS_FILE, new_dockings)
     except (OSError, ValueError) as error:
         typer.echo(f"could not dock {ship_id}: {error}", err=True)
         raise typer.Exit(code=1) from None
@@ -185,11 +187,15 @@ def unload_cargo(ship_id: str, warehouse_id: str, units: int, stored_at: str = "
     try:
         registered_ships = read_ships(SHIPS_FILE)
         registered_warehouses = read_warehouses(WAREHOUSES_FILE)
+        current_dockings = read_dockings(DOCKINGS_FILE)
         move = cargo.unload_cargo(
             ships.find_ship(ship_id, registered_ships),
             warehouses.find_warehouse(warehouse_id, registered_warehouses),
             units,
-            read_dockings(DOCKINGS_FILE),
+            current_dockings,
+        )
+        storage.check_stored_after_docking(
+            storage_time, departures.find_docking(ship_id, current_dockings).docked_at
         )
         new_cargo = storage.StoredCargo(ship_id, warehouse_id, units, storage_time)
         stored_cargo = storage.store_cargo(new_cargo, read_stored_cargo(STORED_CARGO_FILE))

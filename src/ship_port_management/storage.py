@@ -20,6 +20,11 @@ def store_cargo(new_cargo: StoredCargo, stored: list[StoredCargo]) -> list[Store
     return stored + [new_cargo]
 
 
+def check_stored_after_docking(stored_at: str, docked_at: str) -> None:
+    if parse_time(stored_at, "storage time") < parse_time(docked_at, "docking time"):
+        raise ValueError(f"storage time ({stored_at}) can't be before docking time ({docked_at})")
+
+
 def take_cargo(
     ship_id: str, warehouse_id: str, units: int, stored: list[StoredCargo]
 ) -> list[StoredCargo]:
