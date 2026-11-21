@@ -47,7 +47,7 @@ def fill_form(app: HarbourApp, values: dict[str, str]) -> None:
 def test_run_command_returns_the_cli_success_message() -> None:
     succeeded, message = run_command(lambda: cli.add_dock("D1", 500, 120))
     assert succeeded
-    assert message.startswith("Dock D1 successfully added")
+    assert message.startswith("Added dock D1")
 
 
 def test_run_command_returns_the_cli_error_message() -> None:

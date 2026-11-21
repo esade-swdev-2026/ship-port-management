@@ -4,20 +4,23 @@ A command-line tool for port managers: register the ships arriving at the port a
 the ships that are there. Invalid input, such as a ship registered twice or cargo over
 the ship's capacity, is refused with a clear message.
 
-Also tracks different docks that ships can stay at. Any invalid input, such as 
-adding 2 docks with the same dock_id is refused clearly. A ship can be docked at a
-free dock that is big enough for it, and a dock never holds two ships at once.
+It also tracks the docks ships can stay at. Invalid input, such as two docks with the
+same ID, is refused clearly. A ship can be docked at a free dock that is big enough for
+it, and a dock never holds two ships at once.
 When a ship departs, its dock is freed and it is charged the dock's hourly rate for every
 started hour it spent there.
 
-Also tracks warehouses (storage areas) for cargo, with how many units each one has
+It also tracks warehouses (storage areas) for cargo, with how many units each one has
 used and free. A docked ship can unload cargo into a warehouse or load cargo from
 one, never more than the ship carries, the warehouse holds, or either has room for.
 Cargo kept in a warehouse is free for the first 3 days; after that each ship is charged
 the warehouse's daily rate for every unit of its cargo, for every full day past the free period.
 
-## Who is this for 
-This project is for port managers to track the activity in their ports, while making sure incoming movement is valid. 
+`port-status` shows the whole port at once, and `tui` opens the same commands in a terminal
+interface with tabs and forms.
+
+## Who is this for
+This project is for port managers to track the activity in their ports, while making sure incoming movement is valid.
 
 ## Install
 
@@ -57,9 +60,9 @@ uv run ship-port-management depart-vessel MV-ATLAS --departed-at 2026-10-23T12:0
 Registered MV-ATLAS (Atlas), room for 460 more units
 MV-ATLAS  Atlas  arrived 2026-10-18T09:30  cargo 40/500
 
-Dock D1 successfully added (Max ship size: 500, hourly rate: 120.0)
+Added dock D1, takes ships up to 500 units at 120.0 per hour
 Docked MV-ATLAS at D1
-Dock id: D1, Max ship size = 500, Hourly rate: 120.0, Status: occupied
+D1  max ship size 500  rate 120.0 per hour  occupied
 
 Added warehouse W-NORTH, room for 200 units at 1.5 per unit per day
 Unloaded 30 units from MV-ATLAS into W-NORTH
@@ -135,7 +138,7 @@ docker pull ghcr.io/esade-swdev-2026/ship-port-management:v1.0
 docker run --rm -v ship-port-management-data:/app/data ghcr.io/esade-swdev-2026/ship-port-management:v1.0 list-vessels
 ```
 
-The `:v1.0` image only exists once the `v1.0` tag has been pushed. A merge to `main` publishes an image tagged with the first seven characters of its commit instead, so `:1a2193f` pulls the image built from commit `1a2193f`.
+The `:v1.0` image only exists once the `v1.0` tag has been pushed. A merge to `main` publishes an image tagged with the first seven characters of its commit instead, so `:f43ad39` pulls the image built from commit `f43ad39`.
 
 ## Develop
 
@@ -163,8 +166,9 @@ src/ship_port_management/   the package
   cargo.py                  Loading and unloading cargo between docked ships and warehouses
   warehouses.py             Warehouse (storage area): capacity, used and free units
   storage.py                Whose cargo is stored where since when, and the storage fees owed
+  status.py                 What port-status shows: ships and their docks, free docks, warehouse fill
   times.py                  Reading and checking times like 2026-10-18T09:30, and the current time
-  csv_handling.py           reads and writes the ships, docks, dockings, warehouses and stored cargo CSV files
+  csv_handling.py           reads, checks and writes the ships, docks, dockings, warehouses, stored cargo and departures CSV files
   __main__.py               lets `python -m ship_port_management` work
 tests/                      pytest tests, one file per module
 pyproject.toml              dependencies and tool configuration, the single source of truth

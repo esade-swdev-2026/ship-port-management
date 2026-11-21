@@ -39,7 +39,7 @@ def register_ship(new_ship: Ship, ships: list[Ship]) -> list[Ship]:
         raise ValueError("cargo units must be between 0 and capacity")
     parse_time(new_ship.arrival_time, "arrival time")
     if is_duplicate_ship(new_ship.ship_id, ships):
-        raise ValueError(f"ship {new_ship.ship_id} has already been registered")
+        raise ValueError(f"ship {new_ship.ship_id} is already registered")
     return ships + [new_ship]
 
 
