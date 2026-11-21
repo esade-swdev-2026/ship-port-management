@@ -117,3 +117,63 @@ def test_departure_row_with_missing_columns_is_refused(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError):
         read_departures(departures_file)
+
+
+def test_ship_row_with_a_word_for_capacity_is_refused(tmp_path: Path) -> None:
+    ships_file = tmp_path / "ships.csv"
+    ships_file.write_text(
+        "ship_id,name,arrival_time,capacity,cargo_units\nIMO9074729,Atlas,2026-10-14T09:30,big,0\n"
+    )
+    with pytest.raises(ValueError, match="capacity must be a whole number, got 'big'"):
+        read_ships(ships_file)
+
+
+def test_ship_row_that_breaks_the_rules_is_refused(tmp_path: Path) -> None:
+    ships_file = tmp_path / "ships.csv"
+    ships_file.write_text(
+        "ship_id,name,arrival_time,capacity,cargo_units\nIMO9074729,Atlas,banana,-5,999\n"
+    )
+    with pytest.raises(ValueError, match="malformed row"):
+        read_ships(ships_file)
+
+
+def test_dock_row_with_a_rate_that_is_not_a_number_is_refused(tmp_path: Path) -> None:
+    docks_file = tmp_path / "docks.csv"
+    docks_file.write_text("dock_id,max_ship_size,hourly_rate\nNorth,500,cheap\n")
+    with pytest.raises(ValueError, match="hourly rate must be a number, got 'cheap'"):
+        read_docks(docks_file)
+
+
+def test_warehouse_row_holding_more_than_its_capacity_is_refused(tmp_path: Path) -> None:
+    warehouses_file = tmp_path / "warehouses.csv"
+    warehouses_file.write_text(
+        "warehouse_id,capacity,daily_rate_per_unit,stored_units\nW-NORTH,100,1.5,150\n"
+    )
+    with pytest.raises(ValueError, match="stored units must be between 0 and capacity"):
+        read_warehouses(warehouses_file)
+
+
+def test_docking_row_with_a_bad_time_is_refused(tmp_path: Path) -> None:
+    dockings_file = tmp_path / "dockings.csv"
+    dockings_file.write_text("ship_id,dock_id,docked_at\nIMO9074729,North,yesterday\n")
+    with pytest.raises(ValueError, match="docking time must look like"):
+        read_dockings(dockings_file)
+
+
+def test_stored_cargo_row_with_a_bad_time_is_refused(tmp_path: Path) -> None:
+    stored_cargo_file = tmp_path / "stored_cargo.csv"
+    stored_cargo_file.write_text(
+        "ship_id,warehouse_id,units,stored_at\nIMO9074729,W-NORTH,30,soon\n"
+    )
+    with pytest.raises(ValueError, match="storage time must look like"):
+        read_stored_cargo(stored_cargo_file)
+
+
+def test_departure_row_with_a_word_for_hours_is_refused(tmp_path: Path) -> None:
+    departures_file = tmp_path / "departures.csv"
+    departures_file.write_text(
+        "ship_id,dock_id,docked_at,departed_at,hours,docking_fee\n"
+        "IMO9074729,North,2026-10-14T10:00,2026-10-14T15:20,six,720.0\n"
+    )
+    with pytest.raises(ValueError, match="hours must be a whole number, got 'six'"):
+        read_departures(departures_file)
