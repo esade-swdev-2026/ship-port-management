@@ -27,6 +27,13 @@ def test_register_vessel_reports_remaining_room() -> None:
     assert "room for 460 more units" in result.output
 
 
+def test_help_describes_each_command() -> None:
+    result = runner.invoke(app, ["--help"])
+    assert result.exit_code == 0
+    assert "List every dock" in result.output
+    assert "Move cargo from a docked ship" in result.output
+
+
 def test_register_vessel_over_capacity_fails_with_message() -> None:
     result = runner.invoke(app, REGISTER_OVERLOADED)
     assert result.exit_code == 1
@@ -37,7 +44,7 @@ def test_registering_the_same_ship_twice_fails() -> None:
     runner.invoke(app, REGISTER_ATLAS)
     result = runner.invoke(app, REGISTER_ATLAS)
     assert result.exit_code == 1
-    assert "already been registered" in result.output
+    assert "is already registered" in result.output
 
 
 def test_list_vessels_with_no_ships() -> None:
@@ -84,7 +91,7 @@ def test_docked_ship_makes_its_dock_occupied() -> None:
     result = runner.invoke(app, DOCK_ATLAS_AT_D1)
     assert result.exit_code == 0
     assert "Docked MV-ATLAS at D1" in result.output
-    assert "Status: occupied" in runner.invoke(app, ["list-docks"]).output
+    assert "per hour  occupied" in runner.invoke(app, ["list-docks"]).output
 
 
 def test_docking_an_unregistered_ship_fails_with_message() -> None:
@@ -140,7 +147,7 @@ def test_depart_vessel_shows_the_docking_fee() -> None:
 def test_departed_ship_makes_its_dock_available() -> None:
     dock_atlas_at_ten()
     runner.invoke(app, DEPART_ATLAS)
-    assert "Status: available" in runner.invoke(app, ["list-docks"]).output
+    assert "per hour  available" in runner.invoke(app, ["list-docks"]).output
 
 
 def test_departed_ship_can_dock_again() -> None:
@@ -149,6 +156,15 @@ def test_departed_ship_can_dock_again() -> None:
     result = runner.invoke(app, [*DOCK_ATLAS_AT_D1, "--docked-at", "2026-10-19T08:00"])
     assert result.exit_code == 0
     assert "Docked MV-ATLAS at D1" in result.output
+
+
+def test_docking_again_before_the_last_departure_fails() -> None:
+    dock_atlas_at_ten()
+    runner.invoke(app, DEPART_ATLAS)
+    result = runner.invoke(app, [*DOCK_ATLAS_AT_D1, "--docked-at", "2026-10-18T12:00"])
+    assert result.exit_code == 1
+    assert "can't be before the last departure" in result.output
+    assert "available" in runner.invoke(app, ["list-docks"]).output
 
 
 def test_departing_an_undocked_ship_fails_with_message() -> None:
@@ -163,7 +179,7 @@ def test_departing_before_docking_keeps_the_dock_occupied() -> None:
     result = runner.invoke(app, ["depart-vessel", "MV-ATLAS", "--departed-at", "2026-10-18T09:45"])
     assert result.exit_code == 1
     assert "before docking time" in result.output
-    assert "Status: occupied" in runner.invoke(app, ["list-docks"]).output
+    assert "per hour  occupied" in runner.invoke(app, ["list-docks"]).output
 
 
 def test_departing_with_a_corrupt_departures_file_keeps_the_dock_occupied() -> None:
@@ -172,13 +188,11 @@ def test_departing_with_a_corrupt_departures_file_keeps_the_dock_occupied() -> N
     result = runner.invoke(app, DEPART_ATLAS)
     assert result.exit_code == 1
     assert "malformed row" in result.output
-    assert "Status: occupied" in runner.invoke(app, ["list-docks"]).output
+    assert "per hour  occupied" in runner.invoke(app, ["list-docks"]).output
 
 
 def dock_atlas_next_to_north_warehouse() -> None:
-    runner.invoke(app, REGISTER_ATLAS)
-    runner.invoke(app, ADD_DOCK_D1)
-    runner.invoke(app, DOCK_ATLAS_AT_D1)
+    dock_atlas_at_ten()
     runner.invoke(app, ADD_NORTH_WAREHOUSE)
 
 
@@ -261,6 +275,26 @@ def test_unload_cargo_with_invalid_storage_time_changes_nothing() -> None:
     assert result.exit_code == 1
     assert "must look like" in result.output
     assert "used 0/200" in runner.invoke(app, ["list-warehouses"]).output
+
+
+def test_unloading_cargo_stored_before_the_ship_docked_changes_nothing() -> None:
+    dock_atlas_next_to_north_warehouse()
+    unload = ["unload-cargo", "MV-ATLAS", "W-NORTH", "30", "--stored-at", "2026-10-18T09:00"]
+    result = runner.invoke(app, unload)
+    assert result.exit_code == 1
+    assert "can't be before docking time" in result.output
+    assert "used 0/200" in runner.invoke(app, ["list-warehouses"]).output
+
+
+def test_departing_before_the_last_unload_keeps_the_ship_docked() -> None:
+    dock_atlas_next_to_north_warehouse()
+    unload = ["unload-cargo", "MV-ATLAS", "W-NORTH", "30", "--stored-at", "2026-10-25T10:00"]
+    runner.invoke(app, unload)
+    depart = ["depart-vessel", "MV-ATLAS", "--departed-at", "2026-10-19T10:00"]
+    result = runner.invoke(app, depart)
+    assert result.exit_code == 1
+    assert "can't be before the last unload" in result.output
+    assert "occupied" in runner.invoke(app, ["list-docks"]).output
 
 
 def test_storage_fees_with_invalid_time_fails_with_message() -> None:

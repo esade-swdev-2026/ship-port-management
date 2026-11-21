@@ -85,7 +85,7 @@ def test_port_status_has_all_three_sections() -> None:
 
 def test_port_status_lists_only_free_docks() -> None:
     lines = format_port_status([ATLAS], [NORTH_DOCK, SOUTH_DOCK], [], [ATLAS_AT_NORTH])
-    dock_lines = [line for line in lines if "Dock id:" in line]
+    dock_lines = [line for line in lines if "per hour" in line]
     assert len(dock_lines) == 1
     assert "D2" in dock_lines[0]
 

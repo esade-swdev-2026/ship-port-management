@@ -38,15 +38,11 @@ DEPARTURES_FILE = Path("data") / "departures.csv"
 app = typer.Typer(help="Track ships, docks and cargo in a port.")
 
 
-@app.callback()
-def main() -> None:
-    pass
-
-
 @app.command()
 def register_vessel(
     ship_id: str, name: str, capacity: int, cargo_units: int = 0, arrival_time: str = ""
 ) -> None:
+    """Register a ship that has arrived at the port."""
     arrival = arrival_time or current_time()
     new_ship = ships.Ship(ship_id, name, arrival, capacity, cargo_units)
     try:
@@ -61,6 +57,7 @@ def register_vessel(
 
 @app.command()
 def list_vessels() -> None:
+    """List every registered ship and the cargo on board."""
     try:
         registered_ships = read_ships(SHIPS_FILE)
     except (OSError, ValueError) as error:
@@ -75,6 +72,7 @@ def list_vessels() -> None:
 
 @app.command()
 def add_dock(dock_id: str, max_ship_size: int, hourly_rate: float) -> None:
+    """Add a dock with the largest ship capacity it takes and its hourly rate."""
     new_dock = docks.Dock(dock_id, max_ship_size, hourly_rate)
     try:
         registered_docks = read_docks(DOCKS_FILE)
@@ -83,13 +81,13 @@ def add_dock(dock_id: str, max_ship_size: int, hourly_rate: float) -> None:
         typer.echo(f"could not add dock {dock_id}: {error}", err=True)
         raise typer.Exit(code=1) from None
     typer.echo(
-        f"Dock {dock_id} successfully added (Max ship size: {max_ship_size}, "
-        f"hourly rate: {hourly_rate})"
+        f"Added dock {dock_id}, takes ships up to {max_ship_size} units at {hourly_rate} per hour"
     )
 
 
 @app.command()
 def list_docks() -> None:
+    """List every dock and whether it is available or occupied."""
     try:
         registered_docks = read_docks(DOCKS_FILE)
         occupied = dockings.occupied_dock_ids(read_dockings(DOCKINGS_FILE))
@@ -105,14 +103,17 @@ def list_docks() -> None:
 
 @app.command()
 def dock_vessel(ship_id: str, dock_id: str, docked_at: str = "") -> None:
+    """Dock a registered ship at a free dock that fits it."""
     docking_time = docked_at or current_time()
     try:
         ship = ships.find_ship(ship_id, read_ships(SHIPS_FILE))
         dock = docks.find_dock(dock_id, read_docks(DOCKS_FILE))
         current_dockings = read_dockings(DOCKINGS_FILE)
-        write_dockings(
-            DOCKINGS_FILE, dockings.dock_ship(ship, dock, docking_time, current_dockings)
+        new_dockings = dockings.dock_ship(ship, dock, docking_time, current_dockings)
+        departures.check_docked_after_last_departure(
+            ship_id, docking_time, read_departures(DEPARTURES_FILE)
         )
+        write_dockings(DOCKINGS_FILE, new_dockings)
     except (OSError, ValueError) as error:
         typer.echo(f"could not dock {ship_id}: {error}", err=True)
         raise typer.Exit(code=1) from None
@@ -121,10 +122,17 @@ def dock_vessel(ship_id: str, dock_id: str, docked_at: str = "") -> None:
 
 @app.command()
 def depart_vessel(ship_id: str, departed_at: str = "") -> None:
+    """Let a docked ship leave, free its dock and charge the docking fee."""
     departure_time = departed_at or current_time()
     try:
         result = departures.depart_ship(
             ship_id, departure_time, read_dockings(DOCKINGS_FILE), read_docks(DOCKS_FILE)
+        )
+        departures.check_departed_after_last_unload(
+            ship_id,
+            result.departure.docked_at,
+            departure_time,
+            read_stored_cargo(STORED_CARGO_FILE),
         )
         recorded_departures = read_departures(DEPARTURES_FILE)
         write_dockings(DOCKINGS_FILE, result.dockings)
@@ -137,6 +145,7 @@ def depart_vessel(ship_id: str, departed_at: str = "") -> None:
 
 @app.command()
 def add_warehouse(warehouse_id: str, capacity: int, daily_rate_per_unit: float) -> None:
+    """Add a warehouse with its capacity and daily rate per unit."""
     new_warehouse = warehouses.Warehouse(warehouse_id, capacity, daily_rate_per_unit)
     try:
         registered_warehouses = read_warehouses(WAREHOUSES_FILE)
@@ -154,6 +163,7 @@ def add_warehouse(warehouse_id: str, capacity: int, daily_rate_per_unit: float) 
 
 @app.command()
 def list_warehouses() -> None:
+    """List every warehouse with its used and free units."""
     try:
         registered_warehouses = read_warehouses(WAREHOUSES_FILE)
     except (OSError, ValueError) as error:
@@ -181,15 +191,20 @@ def save_cargo_move(
 
 @app.command()
 def unload_cargo(ship_id: str, warehouse_id: str, units: int, stored_at: str = "") -> None:
+    """Move cargo from a docked ship into a warehouse."""
     storage_time = stored_at or current_time()
     try:
         registered_ships = read_ships(SHIPS_FILE)
         registered_warehouses = read_warehouses(WAREHOUSES_FILE)
+        current_dockings = read_dockings(DOCKINGS_FILE)
         move = cargo.unload_cargo(
             ships.find_ship(ship_id, registered_ships),
             warehouses.find_warehouse(warehouse_id, registered_warehouses),
             units,
-            read_dockings(DOCKINGS_FILE),
+            current_dockings,
+        )
+        storage.check_stored_after_docking(
+            storage_time, departures.find_docking(ship_id, current_dockings).docked_at
         )
         new_cargo = storage.StoredCargo(ship_id, warehouse_id, units, storage_time)
         stored_cargo = storage.store_cargo(new_cargo, read_stored_cargo(STORED_CARGO_FILE))
@@ -202,6 +217,7 @@ def unload_cargo(ship_id: str, warehouse_id: str, units: int, stored_at: str = "
 
 @app.command()
 def load_cargo(ship_id: str, warehouse_id: str, units: int) -> None:
+    """Move cargo from a warehouse onto a docked ship, the ship's own cargo first."""
     try:
         registered_ships = read_ships(SHIPS_FILE)
         registered_warehouses = read_warehouses(WAREHOUSES_FILE)
@@ -223,6 +239,7 @@ def load_cargo(ship_id: str, warehouse_id: str, units: int) -> None:
 
 @app.command()
 def storage_fees(as_of: str = "") -> None:
+    """Show the storage fee each ship owes for its cargo in storage."""
     fee_time = as_of or current_time()
     try:
         fees = storage.fees_by_ship(
@@ -240,6 +257,7 @@ def storage_fees(as_of: str = "") -> None:
 
 @app.command()
 def port_status() -> None:
+    """Show every ship and its dock, the free docks and how full each warehouse is."""
     try:
         lines = status.format_port_status(
             read_ships(SHIPS_FILE),
@@ -262,6 +280,7 @@ def require_terminal(command: str) -> None:
 
 @app.command()
 def tui() -> None:
+    """Open the terminal interface with tabs for ships, docks, warehouses and fees."""
     require_terminal("tui")
     from ship_port_management.tui import HarbourApp
 

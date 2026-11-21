@@ -2,6 +2,8 @@ import pytest
 
 from ship_port_management.departures import (
     Departure,
+    check_departed_after_last_unload,
+    check_docked_after_last_departure,
     depart_ship,
     describe_departure,
     hours_at_dock,
@@ -9,6 +11,7 @@ from ship_port_management.departures import (
 )
 from ship_port_management.dockings import Docking
 from ship_port_management.docks import Dock
+from ship_port_management.storage import StoredCargo
 
 DOCKED_AT = "2026-10-14T10:00"
 NORTH = Dock("North", 500, 120.0)
@@ -115,3 +118,46 @@ def test_departure_recorded_before_docking_is_refused() -> None:
     departure = Departure("IMO9074729", "North", DOCKED_AT, "2026-10-14T09:00", 0, 0.0)
     with pytest.raises(ValueError, match="before docking time"):
         record_departure(departure, [])
+
+
+ATLAS_LEFT_AT_NOON = Departure("IMO9074729", "North", DOCKED_AT, "2026-10-14T12:00", 2, 240.0)
+
+
+def test_docking_again_before_the_last_departure_is_refused() -> None:
+    with pytest.raises(ValueError, match="can't be before the last departure"):
+        check_docked_after_last_departure("IMO9074729", "2026-10-14T11:00", [ATLAS_LEFT_AT_NOON])
+
+
+def test_docking_again_after_the_last_departure_is_allowed() -> None:
+    check_docked_after_last_departure("IMO9074729", "2026-10-14T13:00", [ATLAS_LEFT_AT_NOON])
+
+
+def test_other_ships_departures_do_not_matter() -> None:
+    check_docked_after_last_departure("IMO9012328", "2026-10-14T11:00", [ATLAS_LEFT_AT_NOON])
+
+
+ATLAS_UNLOADED_AT_ONE = StoredCargo("IMO9074729", "W-NORTH", 30, "2026-10-14T13:00")
+
+
+def test_departing_before_the_last_unload_is_refused() -> None:
+    with pytest.raises(ValueError, match="can't be before the last unload"):
+        check_departed_after_last_unload(
+            "IMO9074729", DOCKED_AT, "2026-10-14T12:00", [ATLAS_UNLOADED_AT_ONE]
+        )
+
+
+def test_departing_after_the_last_unload_is_allowed() -> None:
+    check_departed_after_last_unload(
+        "IMO9074729", DOCKED_AT, "2026-10-14T14:00", [ATLAS_UNLOADED_AT_ONE]
+    )
+
+
+def test_cargo_from_an_earlier_visit_does_not_count() -> None:
+    earlier = StoredCargo("IMO9074729", "W-NORTH", 30, "2026-10-13T13:00")
+    check_departed_after_last_unload("IMO9074729", DOCKED_AT, "2026-10-14T11:00", [earlier])
+
+
+def test_other_ships_cargo_does_not_count() -> None:
+    check_departed_after_last_unload(
+        "IMO9012328", DOCKED_AT, "2026-10-14T11:00", [ATLAS_UNLOADED_AT_ONE]
+    )

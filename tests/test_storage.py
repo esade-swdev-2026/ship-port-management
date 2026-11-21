@@ -5,6 +5,7 @@ import pytest
 from ship_port_management.storage import (
     StoredCargo,
     chargeable_days,
+    check_stored_after_docking,
     describe_storage_fee,
     fees_by_ship,
     store_cargo,
@@ -32,6 +33,15 @@ def test_store_cargo_with_invalid_time_is_refused() -> None:
 def test_storing_no_units_is_refused(units: int) -> None:
     with pytest.raises(ValueError, match="units stored must be positive"):
         store_cargo(StoredCargo("MV-ATLAS", "W-NORTH", units, "2026-10-14T09:30"), [])
+
+
+def test_cargo_stored_before_the_ship_docked_is_refused() -> None:
+    with pytest.raises(ValueError, match="can't be before docking time"):
+        check_stored_after_docking("2026-10-14T08:00", "2026-10-14T09:30")
+
+
+def test_cargo_stored_when_the_ship_docked_is_allowed() -> None:
+    check_stored_after_docking("2026-10-14T09:30", "2026-10-14T09:30")
 
 
 def test_store_cargo_with_timezone_is_refused() -> None:
