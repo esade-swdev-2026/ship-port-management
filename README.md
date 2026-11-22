@@ -116,7 +116,7 @@ Ships are saved in `data/ships.csv`, docks in `data/docks.csv`, which ship is at
 dock in `data/dockings.csv`, warehouses in `data/warehouses.csv`, which ship's cargo
 is in which warehouse since when in `data/stored_cargo.csv`, departed visits with their
 docking fee in `data/departures.csv` and every unload and load, with the visit it belongs to,
-in `data/cargo_transfers.csv`. Delete the `data` folder to start with an empty port.
+in `data/cargo_transfers.csv`. Delete the `data` folder to start with an empty port. A data file that does not start with the header the app writes, or has a row that breaks the rules, is refused with a message instead of being read.
 
 Bad input is refused with a message and exit code 1, for example cargo over capacity:
 

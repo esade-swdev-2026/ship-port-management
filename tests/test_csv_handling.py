@@ -241,3 +241,16 @@ def test_transfer_row_with_an_unknown_direction_is_refused(tmp_path: Path) -> No
     )
     with pytest.raises(ValueError, match="direction must be unloaded or loaded"):
         read_transfers(transfers_file)
+
+
+def test_file_with_the_wrong_header_is_refused(tmp_path: Path) -> None:
+    docks_file = tmp_path / "docks.csv"
+    docks_file.write_text("x")
+    with pytest.raises(ValueError, match="does not start with the header"):
+        read_docks(docks_file)
+
+
+def test_empty_file_means_no_ships(tmp_path: Path) -> None:
+    ships_file = tmp_path / "ships.csv"
+    ships_file.write_text("")
+    assert read_ships(ships_file) == []
