@@ -5,6 +5,7 @@ from ship_port_management.dockings import (
     dock_ship,
     is_ship_docked,
     occupied_dock_ids,
+    record_docking,
     ship_fits_dock,
 )
 from ship_port_management.docks import Dock
@@ -87,3 +88,22 @@ def test_docking_time_that_is_not_a_time_is_refused() -> None:
 def test_docking_time_with_timezone_is_refused() -> None:
     with pytest.raises(ValueError, match="without a timezone"):
         dock_ship(ATLAS, NORTH, "2026-10-14T12:00+01:00", [])
+
+
+def test_record_docking_adds_it_at_the_end() -> None:
+    atlas_at_north = Docking("IMO9074729", "North", DOCKED_AT)
+    assert record_docking(atlas_at_north, []) == [atlas_at_north]
+
+
+def test_recording_a_second_ship_at_the_same_dock_is_refused() -> None:
+    with pytest.raises(ValueError, match="dock North is already occupied"):
+        record_docking(
+            Docking("IMO9012328", "North", DOCKED_AT), [Docking("IMO9074729", "North", DOCKED_AT)]
+        )
+
+
+def test_recording_the_same_ship_at_two_docks_is_refused() -> None:
+    with pytest.raises(ValueError, match="is already docked"):
+        record_docking(
+            Docking("IMO9074729", "South", DOCKED_AT), [Docking("IMO9074729", "North", DOCKED_AT)]
+        )

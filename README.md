@@ -4,18 +4,24 @@ A command-line tool for port managers: register the ships arriving at the port a
 the ships that are there. Invalid input, such as a ship registered twice or cargo over
 the ship's capacity, is refused with a clear message.
 
-Also tracks different docks that ships can stay at. Any invalid input, such as 
-adding 2 docks with the same dock_id is refused clearly. A ship can be docked at a
-free dock that is big enough for it, and a dock never holds two ships at once.
+It also tracks the docks ships can stay at. Invalid input, such as two docks with the
+same ID, is refused clearly. A ship can be docked at a free dock that is big enough for
+it, and a dock never holds two ships at once.
+When a ship departs, its dock is freed and it is charged the dock's hourly rate for every
+started hour it spent there.
 
-Also tracks warehouses (storage areas) for cargo, with how many units each one has
+It also tracks warehouses (storage areas) for cargo, with how many units each one has
 used and free. A docked ship can unload cargo into a warehouse or load cargo from
 one, never more than the ship carries, the warehouse holds, or either has room for.
 Cargo kept in a warehouse is free for the first 3 days; after that each ship is charged
 the warehouse's daily rate for every unit of its cargo, for every full day past the free period.
 
-## Who is this for 
-This project is for port managers to track the activity in their ports, while making sure incoming movement is valid. 
+`visit-history` lists every past visit with its docking and departure times, the
+cargo unloaded and loaded during it and its docking fee. `port-status` shows the whole port at
+once, and `tui` opens the same commands in a terminal interface with tabs and forms.
+
+## Who is this for
+This project is for port managers to track the activity in their ports, while making sure incoming movement is valid.
 
 ## Install
 
@@ -32,14 +38,14 @@ and CI resolve the same ones. When you change a dependency in `pyproject.toml`, 
 
 ## Use
 
-Register a ship, dock it, add a warehouse, then move cargo between them:
+Register a ship, dock it, add a warehouse, move cargo between them, then let the ship depart:
 
 ```bash
 uv run ship-port-management register-vessel MV-ATLAS Atlas 500 --cargo-units 40 --arrival-time 2026-10-18T09:30
 uv run ship-port-management list-vessels
 
 uv run ship-port-management add-dock D1 500 120
-uv run ship-port-management dock-vessel MV-ATLAS D1
+uv run ship-port-management dock-vessel MV-ATLAS D1 --docked-at 2026-10-18T09:30
 uv run ship-port-management list-docks
 
 uv run ship-port-management add-warehouse W-NORTH 200 1.5
@@ -48,15 +54,17 @@ uv run ship-port-management load-cargo MV-ATLAS W-NORTH 10
 uv run ship-port-management list-warehouses
 uv run ship-port-management storage-fees --as-of 2026-10-23T10:00
 uv run ship-port-management port-status
+uv run ship-port-management depart-vessel MV-ATLAS --departed-at 2026-10-23T12:00
+uv run ship-port-management visit-history
 ```
 
 ```
 Registered MV-ATLAS (Atlas), room for 460 more units
 MV-ATLAS  Atlas  arrived 2026-10-18T09:30  cargo 40/500
 
-Dock D1 successfully added (Max ship size: 500, hourly rate: 120.0)
+Added dock D1, takes ships up to 500 units at 120.0 per hour
 Docked MV-ATLAS at D1
-Dock id: D1, Max ship size = 500, Hourly rate: 120.0, Status: occupied
+D1  max ship size 500  rate 120.0 per hour  occupied
 
 Added warehouse W-NORTH, room for 200 units at 1.5 per unit per day
 Unloaded 30 units from MV-ATLAS into W-NORTH
@@ -69,6 +77,8 @@ Available docks
   none
 Storage
   W-NORTH  20/200 units  10% full
+MV-ATLAS left D1 after 123 hours, docking fee 14760.00
+MV-ATLAS  at D1 from 2026-10-18T09:30 to 2026-10-23T12:00  unloaded 30  loaded 10  docking fee 14760.00
 ```
 
 | Command | What it does |
@@ -80,6 +90,9 @@ Storage
 | `add-dock DOCK_ID MAX_SHIP_SIZE HOURLY_RATE` | Adds a dock (max ship size in cargo units, rate per hour) |
 | `dock-vessel SHIP_ID DOCK_ID` | Docks a registered ship at a free dock that fits its size |
 | `--docked-at TIME` | When it docked, e.g. `2026-11-03T10:00` (default now); not before the ship's arrival |
+| `depart-vessel SHIP_ID` | Frees the ship's dock and shows the docking fee (hourly rate x started hours) |
+| `--departed-at TIME` | When it left, e.g. `2026-10-18T15:20` (default now); not before it docked |
+| `visit-history` | Shows every past visit: docking and departure times, cargo unloaded and loaded, and the docking fee |
 | `list-docks` | Shows every dock and if it is available or occupied |
 | `add-warehouse WAREHOUSE_ID CAPACITY DAILY_RATE_PER_UNIT` | Adds a warehouse (capacity in cargo units, rate per unit per day) |
 | `list-warehouses` | Shows every warehouse with its used and free units |
@@ -100,8 +113,10 @@ and `h`/`l` switch tabs. Because `l` switches tabs, loading cargo moves to `p` (
 normal mode, where `j`/`k` pick a box, `i`/`a` start typing in it, `enter` saves and `q` cancels.
 
 Ships are saved in `data/ships.csv`, docks in `data/docks.csv`, which ship is at which
-dock in `data/dockings.csv`, warehouses in `data/warehouses.csv` and which ship's cargo
-is in which warehouse since when in `data/stored_cargo.csv`. Delete the `data` folder to start with an empty port.
+dock in `data/dockings.csv`, warehouses in `data/warehouses.csv`, which ship's cargo
+is in which warehouse since when in `data/stored_cargo.csv`, departed visits with their
+docking fee in `data/departures.csv` and every unload and load, with the visit it belongs to,
+in `data/cargo_transfers.csv`. Delete the `data` folder to start with an empty port.
 
 Bad input is refused with a message and exit code 1, for example cargo over capacity:
 
@@ -134,7 +149,7 @@ docker pull ghcr.io/esade-swdev-2026/ship-port-management:v1.0
 docker run --rm -v ship-port-management-data:/app/data ghcr.io/esade-swdev-2026/ship-port-management:v1.0 list-vessels
 ```
 
-The `:v1.0` image only exists once the `v1.0` tag has been pushed. A merge to `main` publishes an image tagged with the first seven characters of its commit instead, so `:1a2193f` pulls the image built from commit `1a2193f`.
+The `:v1.0` image only exists once the `v1.0` tag has been pushed. A merge to `main` publishes an image tagged with the first seven characters of its commit instead, so `:f43ad39` pulls the image built from commit `f43ad39`.
 
 ## Develop
 
@@ -159,11 +174,14 @@ src/ship_port_management/   the package
   ships.py                  Ship and the rules for registering one
   docks.py                  Dock and the rules for adding one
   dockings.py               Docking a ship: size check, no double booking
+  departures.py             Ship departures: freeing the dock and the docking fee
+  visits.py                 Past visits: the cargo moved during each one, and the visit history
   cargo.py                  Loading and unloading cargo between docked ships and warehouses
   warehouses.py             Warehouse (storage area): capacity, used and free units
   storage.py                Whose cargo is stored where since when, and the storage fees owed
+  status.py                 What port-status shows: ships and their docks, free docks, warehouse fill
   times.py                  Reading and checking times like 2026-10-18T09:30, and the current time
-  csv_handling.py           reads and writes the ships, docks, dockings, warehouses and stored cargo CSV files
+  csv_handling.py           reads, checks and writes the ships, docks, dockings, warehouses, stored cargo, departures and cargo transfers CSV files
   __main__.py               lets `python -m ship_port_management` work
 tests/                      pytest tests, one file per module
 pyproject.toml              dependencies and tool configuration, the single source of truth

@@ -55,7 +55,7 @@ def test_no_ships_registered_means_no_duplicate() -> None:
 
 def test_same_id_with_different_details_is_still_duplicate() -> None:
     renamed = Ship(ATLAS.ship_id, "Other name", "2026-10-15T08:00", 300, 0)
-    with pytest.raises(ValueError, match="has already been registered"):
+    with pytest.raises(ValueError, match="is already registered"):
         register_ship(renamed, [ATLAS])
 
 

@@ -12,12 +12,19 @@ class StoredCargo:
     ship_id: str
     warehouse_id: str
     units: int
-    stored_at: str  # ISO text, e.g. "2026-10-14T09:30"
+    stored_at: str
 
 
 def store_cargo(new_cargo: StoredCargo, stored: list[StoredCargo]) -> list[StoredCargo]:
+    if new_cargo.units <= 0:
+        raise ValueError(f"units stored must be positive, got {new_cargo.units}")
     parse_time(new_cargo.stored_at, "storage time")
     return stored + [new_cargo]
+
+
+def check_stored_after_docking(stored_at: str, docked_at: str) -> None:
+    if parse_time(stored_at, "storage time") < parse_time(docked_at, "docking time"):
+        raise ValueError(f"storage time ({stored_at}) can't be before docking time ({docked_at})")
 
 
 def take_cargo(
