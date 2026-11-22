@@ -149,7 +149,12 @@ docker pull ghcr.io/esade-swdev-2026/ship-port-management:v1.1.0
 docker run --rm -v ship-port-management-data:/app/data ghcr.io/esade-swdev-2026/ship-port-management:v1.1.0 list-vessels
 ```
 
-The image is built for Intel and AMD processors. On a Mac with Apple Silicon, add `--platform linux/amd64` to `docker pull` and `docker run`.
+The image is built for Intel and AMD processors. On a Mac with Apple Silicon, add `--platform linux/amd64` to `docker pull` and `docker run`:
+
+```bash
+docker pull --platform linux/amd64 ghcr.io/esade-swdev-2026/ship-port-management:v1.1.0
+docker run --rm --platform linux/amd64 -v ship-port-management-data:/app/data ghcr.io/esade-swdev-2026/ship-port-management:v1.1.0 list-vessels
+```
 
 The `:v1.1.0` image only exists once the `v1.1.0` tag has been pushed. A merge to `main` publishes an image tagged with the first seven characters of its commit instead, so `:f43ad39` pulls the image built from commit `f43ad39`.
 
