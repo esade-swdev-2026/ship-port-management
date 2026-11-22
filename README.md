@@ -139,17 +139,19 @@ docker run --rm -v ship-port-management-data:/app/data ship-port-management list
 
 Each command runs in a new container that is deleted when it ends, but the ships are saved in the named volume `ship-port-management-data`, so `list-vessels` still shows MV-ATLAS. `docker volume rm ship-port-management-data` deletes the data.
 
-The `tui` command needs a terminal, so run it with `-it`: `docker run --rm -it -v ship-port-management-data:/app/data ship-port-management tui`.
+The `tui` and `tutor` commands need a terminal, so run them with `-it`: `docker run --rm -it -v ship-port-management-data:/app/data ship-port-management tui`.
 
-Every merge to `main` and every version tag such as `v1.0` is checked, built and published by the `release` job in `.github/workflows/check.yml`. The image is private to our group and the lecturer, so log in first with a GitHub token that has `read:packages`, then run the released image without building it:
+Every merge to `main` and every version tag such as `v1.1.0` is checked, built and published by the `release` job in `.github/workflows/check.yml`. The image is private to our group and the lecturer, so log in first with a GitHub token that has `read:packages`, then run the released image without building it:
 
 ```bash
 docker login ghcr.io
-docker pull ghcr.io/esade-swdev-2026/ship-port-management:v1.0
-docker run --rm -v ship-port-management-data:/app/data ghcr.io/esade-swdev-2026/ship-port-management:v1.0 list-vessels
+docker pull ghcr.io/esade-swdev-2026/ship-port-management:v1.1.0
+docker run --rm -v ship-port-management-data:/app/data ghcr.io/esade-swdev-2026/ship-port-management:v1.1.0 list-vessels
 ```
 
-The `:v1.0` image only exists once the `v1.0` tag has been pushed. A merge to `main` publishes an image tagged with the first seven characters of its commit instead, so `:f43ad39` pulls the image built from commit `f43ad39`.
+The image is built for Intel and AMD processors. On a Mac with Apple Silicon, add `--platform linux/amd64` to `docker pull` and `docker run`.
+
+The `:v1.1.0` image only exists once the `v1.1.0` tag has been pushed. A merge to `main` publishes an image tagged with the first seven characters of its commit instead, so `:f43ad39` pulls the image built from commit `f43ad39`.
 
 ## Develop
 
