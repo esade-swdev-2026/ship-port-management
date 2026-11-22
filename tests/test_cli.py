@@ -312,7 +312,7 @@ def test_visit_history_shows_the_cargo_moved_and_the_fee() -> None:
     result = runner.invoke(app, ["visit-history"])
     assert result.exit_code == 0
     assert (
-        "MV-ATLAS  arrived 2026-10-18T09:30  at D1 from 2026-10-18T10:00 to 2026-10-18T15:20  "
+        "MV-ATLAS  at D1 from 2026-10-18T10:00 to 2026-10-18T15:20  "
         "unloaded 30  loaded 10  docking fee 720.00"
     ) in result.output
 

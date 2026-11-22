@@ -16,7 +16,7 @@ one, never more than the ship carries, the warehouse holds, or either has room f
 Cargo kept in a warehouse is free for the first 3 days; after that each ship is charged
 the warehouse's daily rate for every unit of its cargo, for every full day past the free period.
 
-`visit-history` lists every past visit with its arrival, docking and departure times, the
+`visit-history` lists every past visit with its docking and departure times, the
 cargo unloaded and loaded during it and its docking fee. `port-status` shows the whole port at
 once, and `tui` opens the same commands in a terminal interface with tabs and forms.
 
@@ -78,7 +78,7 @@ Available docks
 Storage
   W-NORTH  20/200 units  10% full
 MV-ATLAS left D1 after 123 hours, docking fee 14760.00
-MV-ATLAS  arrived 2026-10-18T09:30  at D1 from 2026-10-18T09:30 to 2026-10-23T12:00  unloaded 30  loaded 10  docking fee 14760.00
+MV-ATLAS  at D1 from 2026-10-18T09:30 to 2026-10-23T12:00  unloaded 30  loaded 10  docking fee 14760.00
 ```
 
 | Command | What it does |
@@ -92,7 +92,7 @@ MV-ATLAS  arrived 2026-10-18T09:30  at D1 from 2026-10-18T09:30 to 2026-10-23T12
 | `--docked-at TIME` | When it docked, e.g. `2026-11-03T10:00` (default now); not before the ship's arrival |
 | `depart-vessel SHIP_ID` | Frees the ship's dock and shows the docking fee (hourly rate x started hours) |
 | `--departed-at TIME` | When it left, e.g. `2026-10-18T15:20` (default now); not before it docked |
-| `visit-history` | Shows every past visit: arrival, docking and departure times, cargo unloaded and loaded, and the docking fee |
+| `visit-history` | Shows every past visit: docking and departure times, cargo unloaded and loaded, and the docking fee |
 | `list-docks` | Shows every dock and if it is available or occupied |
 | `add-warehouse WAREHOUSE_ID CAPACITY DAILY_RATE_PER_UNIT` | Adds a warehouse (capacity in cargo units, rate per unit per day) |
 | `list-warehouses` | Shows every warehouse with its used and free units |

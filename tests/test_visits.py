@@ -1,7 +1,6 @@
 import pytest
 
 from ship_port_management.departures import Departure
-from ship_port_management.ships import Ship
 from ship_port_management.visits import (
     LOADED,
     UNLOADED,
@@ -13,10 +12,8 @@ from ship_port_management.visits import (
     visit_history,
 )
 
-ARRIVED_AT = "2026-10-18T09:30"
 FIRST_DOCKING = "2026-10-18T10:00"
 SECOND_DOCKING = "2026-10-20T08:00"
-ATLAS = Ship("MV-ATLAS", "Atlas", ARRIVED_AT, 500, 40)
 FIRST_VISIT = Departure("MV-ATLAS", "D1", FIRST_DOCKING, "2026-10-18T15:20", 6, 720.0)
 SECOND_VISIT = Departure("MV-ATLAS", "D2", SECOND_DOCKING, "2026-10-20T09:00", 1, 90.0)
 UNLOAD_30 = CargoTransfer("MV-ATLAS", FIRST_DOCKING, "W-NORTH", UNLOADED, 30)
@@ -59,27 +56,20 @@ def test_units_moved_without_transfers_is_zero() -> None:
 
 
 def test_visit_history_has_one_visit_per_departure() -> None:
-    history = visit_history(
-        [FIRST_VISIT, SECOND_VISIT], [ATLAS], [UNLOAD_30, LOAD_10, UNLOAD_5_LATER]
-    )
+    history = visit_history([FIRST_VISIT, SECOND_VISIT], [UNLOAD_30, LOAD_10, UNLOAD_5_LATER])
     assert history == [
-        Visit("MV-ATLAS", "D1", ARRIVED_AT, FIRST_DOCKING, "2026-10-18T15:20", 30, 10, 720.0),
-        Visit("MV-ATLAS", "D2", ARRIVED_AT, SECOND_DOCKING, "2026-10-20T09:00", 5, 0, 90.0),
+        Visit("MV-ATLAS", "D1", FIRST_DOCKING, "2026-10-18T15:20", 30, 10, 720.0),
+        Visit("MV-ATLAS", "D2", SECOND_DOCKING, "2026-10-20T09:00", 5, 0, 90.0),
     ]
 
 
 def test_visit_history_without_departures_is_empty() -> None:
-    assert visit_history([], [ATLAS], [UNLOAD_30]) == []
-
-
-def test_visit_of_an_unknown_ship_is_refused() -> None:
-    with pytest.raises(ValueError, match="not registered"):
-        visit_history([FIRST_VISIT], [], [])
+    assert visit_history([], [UNLOAD_30]) == []
 
 
 def test_describe_visit_shows_times_cargo_and_fee() -> None:
-    visit = Visit("MV-ATLAS", "D1", ARRIVED_AT, FIRST_DOCKING, "2026-10-18T15:20", 30, 10, 720.0)
+    visit = Visit("MV-ATLAS", "D1", FIRST_DOCKING, "2026-10-18T15:20", 30, 10, 720.0)
     assert describe_visit(visit) == (
-        "MV-ATLAS  arrived 2026-10-18T09:30  at D1 from 2026-10-18T10:00 to 2026-10-18T15:20  "
+        "MV-ATLAS  at D1 from 2026-10-18T10:00 to 2026-10-18T15:20  "
         "unloaded 30  loaded 10  docking fee 720.00"
     )

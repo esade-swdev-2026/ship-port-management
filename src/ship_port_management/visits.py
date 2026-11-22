@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 from ship_port_management.departures import Departure
-from ship_port_management.ships import Ship, find_ship
 
 UNLOADED = "unloaded"
 LOADED = "loaded"
@@ -21,7 +20,6 @@ class CargoTransfer:
 class Visit:
     ship_id: str
     dock_id: str
-    arrived_at: str
     docked_at: str
     departed_at: str
     units_unloaded: int
@@ -51,14 +49,11 @@ def units_moved(
     )
 
 
-def visit_history(
-    departures: list[Departure], ships: list[Ship], transfers: list[CargoTransfer]
-) -> list[Visit]:
+def visit_history(departures: list[Departure], transfers: list[CargoTransfer]) -> list[Visit]:
     return [
         Visit(
             ship_id=departure.ship_id,
             dock_id=departure.dock_id,
-            arrived_at=find_ship(departure.ship_id, ships).arrival_time,
             docked_at=departure.docked_at,
             departed_at=departure.departed_at,
             units_unloaded=units_moved(departure.ship_id, departure.docked_at, UNLOADED, transfers),
@@ -71,7 +66,7 @@ def visit_history(
 
 def describe_visit(visit: Visit) -> str:
     return (
-        f"{visit.ship_id}  arrived {visit.arrived_at}  at {visit.dock_id} "
+        f"{visit.ship_id}  at {visit.dock_id} "
         f"from {visit.docked_at} to {visit.departed_at}  "
         f"unloaded {visit.units_unloaded}  loaded {visit.units_loaded}  "
         f"docking fee {visit.docking_fee:.2f}"

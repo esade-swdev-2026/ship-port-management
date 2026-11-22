@@ -149,10 +149,10 @@ def depart_vessel(ship_id: str, departed_at: str = "") -> None:
 
 @app.command()
 def visit_history() -> None:
-    """Show every past visit: arrival, docking and departure times, cargo moved and fee."""
+    """Show every past visit: docking and departure times, cargo moved and fee."""
     try:
         past_visits = visits.visit_history(
-            read_departures(DEPARTURES_FILE), read_ships(SHIPS_FILE), read_transfers(TRANSFERS_FILE)
+            read_departures(DEPARTURES_FILE), read_transfers(TRANSFERS_FILE)
         )
     except (OSError, ValueError) as error:
         typer.echo(f"could not show the visit history: {error}", err=True)
