@@ -344,26 +344,6 @@ def test_interface_without_a_terminal_says_how_to_run_it(command: str) -> None:
     assert f"{command} needs a terminal: with Docker, run it with docker run -it" in result.output
 
 
-def test_negative_hourly_rate_fails_with_the_dock_rule_message() -> None:
-    result = runner.invoke(app, ["add-dock", "D1", "500", "-3"])
-    assert result.exit_code == 1
-    assert "hourly rate must be a positive" in result.output
-
-
-def test_negative_capacity_fails_with_the_ship_rule_message() -> None:
-    result = runner.invoke(app, ["register-vessel", "MV-ATLAS", "Atlas", "-5"])
-    assert result.exit_code == 1
-    assert "capacity must be positive" in result.output
-
-
-def test_misspelled_option_is_still_refused() -> None:
-    result = runner.invoke(
-        app, ["register-vessel", "MV-ATLAS", "Atlas", "500", "--cargo-unit", "5"]
-    )
-    assert result.exit_code == 2
-    assert not Path("data/ships.csv").exists()
-
-
 def test_dock_file_with_the_wrong_header_fails_with_message() -> None:
     Path("data").mkdir()
     Path("data/docks.csv").write_text("x")

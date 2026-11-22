@@ -39,11 +39,10 @@ DOCKINGS_FILE = Path("data") / "dockings.csv"
 STORED_CARGO_FILE = Path("data") / "stored_cargo.csv"
 DEPARTURES_FILE = Path("data") / "departures.csv"
 TRANSFERS_FILE = Path("data") / "cargo_transfers.csv"
-NEGATIVE_NUMBERS_AS_VALUES = {"ignore_unknown_options": True}
 app = typer.Typer(help="Track ships, docks and cargo in a port.")
 
 
-@app.command(context_settings=NEGATIVE_NUMBERS_AS_VALUES)
+@app.command()
 def register_vessel(
     ship_id: str, name: str, capacity: int, cargo_units: int = 0, arrival_time: str = ""
 ) -> None:
@@ -75,7 +74,7 @@ def list_vessels() -> None:
         typer.echo(ships.describe_ship(ship))
 
 
-@app.command(context_settings=NEGATIVE_NUMBERS_AS_VALUES)
+@app.command()
 def add_dock(dock_id: str, max_ship_size: int, hourly_rate: float) -> None:
     """Add a dock with the largest ship capacity it takes and its hourly rate."""
     new_dock = docks.Dock(dock_id, max_ship_size, hourly_rate)
@@ -165,7 +164,7 @@ def visit_history() -> None:
         typer.echo(visits.describe_visit(visit))
 
 
-@app.command(context_settings=NEGATIVE_NUMBERS_AS_VALUES)
+@app.command()
 def add_warehouse(warehouse_id: str, capacity: int, daily_rate_per_unit: float) -> None:
     """Add a warehouse with its capacity and daily rate per unit."""
     new_warehouse = warehouses.Warehouse(warehouse_id, capacity, daily_rate_per_unit)
@@ -213,7 +212,7 @@ def save_cargo_move(
     write_transfers(TRANSFERS_FILE, transfers)
 
 
-@app.command(context_settings=NEGATIVE_NUMBERS_AS_VALUES)
+@app.command()
 def unload_cargo(ship_id: str, warehouse_id: str, units: int, stored_at: str = "") -> None:
     """Move cargo from a docked ship into a warehouse."""
     storage_time = stored_at or current_time()
@@ -240,7 +239,7 @@ def unload_cargo(ship_id: str, warehouse_id: str, units: int, stored_at: str = "
     typer.echo(f"Unloaded {units} units from {ship_id} into {warehouse_id}")
 
 
-@app.command(context_settings=NEGATIVE_NUMBERS_AS_VALUES)
+@app.command()
 def load_cargo(ship_id: str, warehouse_id: str, units: int) -> None:
     """Move cargo from a warehouse onto a docked ship, the ship's own cargo first."""
     try:
