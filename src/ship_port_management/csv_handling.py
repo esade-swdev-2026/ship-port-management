@@ -1,4 +1,5 @@
 import csv
+from collections.abc import Iterator
 from pathlib import Path
 
 from ship_port_management.departures import Departure, record_departure
@@ -62,6 +63,12 @@ TRANSFER_HEADER = ["ship_id", "docked_at", "warehouse_id", "direction", "units"]
 TRANSFER_FIELDS_PER_ROW = len(TRANSFER_HEADER)
 
 
+def check_header(reader: Iterator[list[str]], expected_header: list[str], path: Path) -> None:
+    header = next(reader, None)
+    if header is not None and header != expected_header:
+        raise ValueError(f"{path} does not start with the header {','.join(expected_header)}")
+
+
 def whole_number(text: str, column: str) -> int:
     try:
         return int(text)
@@ -82,7 +89,7 @@ def read_ships(path: Path) -> list[Ship]:
     ships: list[Ship] = []
     with path.open(newline="") as handle:
         reader = csv.reader(handle)
-        next(reader, None)
+        check_header(reader, SHIP_HEADER, path)
         for row in reader:
             if len(row) != SHIP_FIELDS_PER_ROW:
                 raise ValueError(f"malformed row in {path}: {row}")
@@ -117,7 +124,7 @@ def read_docks(path: Path) -> list[Dock]:
     docks: list[Dock] = []
     with path.open(newline="") as handle:
         reader = csv.reader(handle)
-        next(reader, None)
+        check_header(reader, DOCK_HEADER, path)
         for row in reader:
             if len(row) != DOCK_FIELDS_PER_ROW:
                 raise ValueError(f"malformed row in {path}: {row}")
@@ -148,7 +155,7 @@ def read_warehouses(path: Path) -> list[Warehouse]:
     warehouses: list[Warehouse] = []
     with path.open(newline="") as handle:
         reader = csv.reader(handle)
-        next(reader, None)
+        check_header(reader, WAREHOUSE_HEADER, path)
         for row in reader:
             if len(row) != WAREHOUSE_FIELDS_PER_ROW:
                 raise ValueError(f"malformed row in {path}: {row}")
@@ -189,7 +196,7 @@ def read_dockings(path: Path) -> list[Docking]:
     dockings: list[Docking] = []
     with path.open(newline="") as handle:
         reader = csv.reader(handle)
-        next(reader, None)
+        check_header(reader, DOCKING_HEADER, path)
         for row in reader:
             if len(row) != DOCKING_FIELDS_PER_ROW:
                 raise ValueError(f"malformed row in {path}: {row}")
@@ -220,7 +227,7 @@ def read_stored_cargo(path: Path) -> list[StoredCargo]:
     stored: list[StoredCargo] = []
     with path.open(newline="") as handle:
         reader = csv.reader(handle)
-        next(reader, None)
+        check_header(reader, STORED_CARGO_HEADER, path)
         for row in reader:
             if len(row) != STORED_CARGO_FIELDS_PER_ROW:
                 raise ValueError(f"malformed row in {path}: {row}")
@@ -252,7 +259,7 @@ def read_departures(path: Path) -> list[Departure]:
     departures: list[Departure] = []
     with path.open(newline="") as handle:
         reader = csv.reader(handle)
-        next(reader, None)
+        check_header(reader, DEPARTURE_HEADER, path)
         for row in reader:
             if len(row) != DEPARTURE_FIELDS_PER_ROW:
                 raise ValueError(f"malformed row in {path}: {row}")
@@ -295,7 +302,7 @@ def read_transfers(path: Path) -> list[CargoTransfer]:
     transfers: list[CargoTransfer] = []
     with path.open(newline="") as handle:
         reader = csv.reader(handle)
-        next(reader, None)
+        check_header(reader, TRANSFER_HEADER, path)
         for row in reader:
             if len(row) != TRANSFER_FIELDS_PER_ROW:
                 raise ValueError(f"malformed row in {path}: {row}")

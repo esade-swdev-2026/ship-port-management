@@ -184,7 +184,9 @@ def test_departing_before_docking_keeps_the_dock_occupied() -> None:
 
 def test_departing_with_a_corrupt_departures_file_keeps_the_dock_occupied() -> None:
     dock_atlas_at_ten()
-    Path("data/departures.csv").write_text("ship_id,dock_id\nMV-NOVA\n")
+    Path("data/departures.csv").write_text(
+        "ship_id,dock_id,docked_at,departed_at,hours,docking_fee\nMV-NOVA\n"
+    )
     result = runner.invoke(app, DEPART_ATLAS)
     assert result.exit_code == 1
     assert "malformed row" in result.output
@@ -237,7 +239,9 @@ def test_port_status_shows_a_docked_ship() -> None:
 
 def test_port_status_with_corrupt_warehouse_file_fails_cleanly() -> None:
     Path("data").mkdir()
-    Path("data/warehouses.csv").write_text("warehouse_id,capacity,daily_rate,stored\nW1,0,1.5,0\n")
+    Path("data/warehouses.csv").write_text(
+        "warehouse_id,capacity,daily_rate_per_unit,stored_units\nW1,0,1.5,0\n"
+    )
     result = runner.invoke(app, ["port-status"])
     assert result.exit_code == 1
     assert "capacity must be positive, got 0" in result.output
@@ -319,7 +323,9 @@ def test_visit_history_shows_the_cargo_moved_and_the_fee() -> None:
 
 def test_visit_history_with_a_corrupt_transfers_file_fails_cleanly() -> None:
     Path("data").mkdir()
-    Path("data/cargo_transfers.csv").write_text("ship_id,docked_at\nMV-ATLAS\n")
+    Path("data/cargo_transfers.csv").write_text(
+        "ship_id,docked_at,warehouse_id,direction,units\nMV-ATLAS\n"
+    )
     result = runner.invoke(app, ["visit-history"])
     assert result.exit_code == 1
     assert "could not show the visit history" in result.output
@@ -336,3 +342,11 @@ def test_interface_without_a_terminal_says_how_to_run_it(command: str) -> None:
     result = runner.invoke(app, [command])
     assert result.exit_code == 1
     assert f"{command} needs a terminal: with Docker, run it with docker run -it" in result.output
+
+
+def test_dock_file_with_the_wrong_header_fails_with_message() -> None:
+    Path("data").mkdir()
+    Path("data/docks.csv").write_text("x")
+    result = runner.invoke(app, ["list-docks"])
+    assert result.exit_code == 1
+    assert "does not start with the header" in result.output
