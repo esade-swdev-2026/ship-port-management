@@ -200,6 +200,8 @@ We used Claude Code as an assistant while building
 this project, specifically to explain course concepts, plan the structure, review our code, suggest code
 snippets, draft documentation, and help when we got lost with git.
 
+The terminal interface (the tui command) was built entirely with the use of AI tools.
+
 Every change was read and verified by the author, checked with ruff, mypy and pytest, (and later in the project) reviewed by another
 member in a pull request before it was merged, and edge-tested by hand.
 
