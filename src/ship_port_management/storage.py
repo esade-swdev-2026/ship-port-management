@@ -16,6 +16,8 @@ class StoredCargo:
 
 
 def store_cargo(new_cargo: StoredCargo, stored: list[StoredCargo]) -> list[StoredCargo]:
+    if new_cargo.units <= 0:
+        raise ValueError(f"units stored must be positive, got {new_cargo.units}")
     parse_time(new_cargo.stored_at, "storage time")
     return stored + [new_cargo]
 

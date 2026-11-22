@@ -37,6 +37,20 @@ def hours_at_dock(docked_at: str, departed_at: str) -> int:
     return math.ceil(seconds_at_dock / SECONDS_PER_HOUR)
 
 
+def record_departure(new_departure: Departure, departures: list[Departure]) -> list[Departure]:
+    hours = hours_at_dock(new_departure.docked_at, new_departure.departed_at)
+    if new_departure.hours != hours:
+        raise ValueError(
+            f"hours must be {hours} for a stay from {new_departure.docked_at} "
+            f"to {new_departure.departed_at}, got {new_departure.hours}"
+        )
+    if not (math.isfinite(new_departure.docking_fee) and new_departure.docking_fee >= 0):
+        raise ValueError(
+            f"docking fee must be a number of 0 or more, got {new_departure.docking_fee}"
+        )
+    return departures + [new_departure]
+
+
 def find_docking(ship_id: str, dockings: list[Docking]) -> Docking:
     for docking in dockings:
         if docking.ship_id == ship_id:

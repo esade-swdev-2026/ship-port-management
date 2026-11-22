@@ -1,11 +1,7 @@
 from ship_port_management.dockings import Docking, occupied_dock_ids
 from ship_port_management.docks import Dock, describe_dock, is_dock_available
 from ship_port_management.ships import Ship
-from ship_port_management.warehouses import (
-    Warehouse,
-    is_valid_storage_capacity,
-    stored_within_capacity,
-)
+from ship_port_management.warehouses import Warehouse
 
 PERCENT = 100
 EMPTY_SECTION = "none"
@@ -23,14 +19,6 @@ def available_docks(docks: list[Dock], occupied: set[str]) -> list[Dock]:
 
 
 def fill_percentage(warehouse: Warehouse) -> float:
-    name = warehouse.warehouse_id
-    if not is_valid_storage_capacity(warehouse.capacity):
-        raise ValueError(f"warehouse {name} has capacity {warehouse.capacity}, it must be positive")
-    if not stored_within_capacity(warehouse):
-        raise ValueError(
-            f"warehouse {name} holds {warehouse.stored_units} units "
-            f"but its capacity is {warehouse.capacity}"
-        )
     return warehouse.stored_units / warehouse.capacity * PERCENT
 
 
