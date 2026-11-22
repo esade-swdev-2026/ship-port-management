@@ -11,6 +11,7 @@ from ship_port_management import (
     ships,
     status,
     storage,
+    visits,
     warehouses,
 )
 from ship_port_management.csv_handling import (
@@ -19,12 +20,14 @@ from ship_port_management.csv_handling import (
     read_docks,
     read_ships,
     read_stored_cargo,
+    read_transfers,
     read_warehouses,
     write_departures,
     write_dockings,
     write_docks,
     write_ships,
     write_stored_cargo,
+    write_transfers,
     write_warehouses,
 )
 from ship_port_management.times import current_time
@@ -35,6 +38,7 @@ WAREHOUSES_FILE = Path("data") / "warehouses.csv"
 DOCKINGS_FILE = Path("data") / "dockings.csv"
 STORED_CARGO_FILE = Path("data") / "stored_cargo.csv"
 DEPARTURES_FILE = Path("data") / "departures.csv"
+TRANSFERS_FILE = Path("data") / "cargo_transfers.csv"
 app = typer.Typer(help="Track ships, docks and cargo in a port.")
 
 
@@ -144,6 +148,23 @@ def depart_vessel(ship_id: str, departed_at: str = "") -> None:
 
 
 @app.command()
+def visit_history() -> None:
+    """Show every past visit: docking and departure times, cargo moved and fee."""
+    try:
+        past_visits = visits.visit_history(
+            read_departures(DEPARTURES_FILE), read_transfers(TRANSFERS_FILE)
+        )
+    except (OSError, ValueError) as error:
+        typer.echo(f"could not show the visit history: {error}", err=True)
+        raise typer.Exit(code=1) from None
+    if not past_visits:
+        typer.echo("no visits yet")
+        return
+    for visit in past_visits:
+        typer.echo(visits.describe_visit(visit))
+
+
+@app.command()
 def add_warehouse(warehouse_id: str, capacity: int, daily_rate_per_unit: float) -> None:
     """Add a warehouse with its capacity and daily rate per unit."""
     new_warehouse = warehouses.Warehouse(warehouse_id, capacity, daily_rate_per_unit)
@@ -181,12 +202,14 @@ def save_cargo_move(
     registered_ships: list[ships.Ship],
     registered_warehouses: list[warehouses.Warehouse],
     stored_cargo: list[storage.StoredCargo],
+    transfers: list[visits.CargoTransfer],
 ) -> None:
     write_ships(SHIPS_FILE, ships.replace_ship(move.ship, registered_ships))
     write_warehouses(
         WAREHOUSES_FILE, warehouses.replace_warehouse(move.warehouse, registered_warehouses)
     )
     write_stored_cargo(STORED_CARGO_FILE, stored_cargo)
+    write_transfers(TRANSFERS_FILE, transfers)
 
 
 @app.command()
@@ -203,12 +226,13 @@ def unload_cargo(ship_id: str, warehouse_id: str, units: int, stored_at: str = "
             units,
             current_dockings,
         )
-        storage.check_stored_after_docking(
-            storage_time, departures.find_docking(ship_id, current_dockings).docked_at
-        )
+        docked_at = departures.find_docking(ship_id, current_dockings).docked_at
+        storage.check_stored_after_docking(storage_time, docked_at)
         new_cargo = storage.StoredCargo(ship_id, warehouse_id, units, storage_time)
         stored_cargo = storage.store_cargo(new_cargo, read_stored_cargo(STORED_CARGO_FILE))
-        save_cargo_move(move, registered_ships, registered_warehouses, stored_cargo)
+        transfer = visits.CargoTransfer(ship_id, docked_at, warehouse_id, visits.UNLOADED, units)
+        transfers = visits.record_transfer(transfer, read_transfers(TRANSFERS_FILE))
+        save_cargo_move(move, registered_ships, registered_warehouses, stored_cargo, transfers)
     except (OSError, ValueError) as error:
         typer.echo(f"could not unload {ship_id}: {error}", err=True)
         raise typer.Exit(code=1) from None
@@ -221,16 +245,20 @@ def load_cargo(ship_id: str, warehouse_id: str, units: int) -> None:
     try:
         registered_ships = read_ships(SHIPS_FILE)
         registered_warehouses = read_warehouses(WAREHOUSES_FILE)
+        current_dockings = read_dockings(DOCKINGS_FILE)
         move = cargo.load_cargo(
             ships.find_ship(ship_id, registered_ships),
             warehouses.find_warehouse(warehouse_id, registered_warehouses),
             units,
-            read_dockings(DOCKINGS_FILE),
+            current_dockings,
         )
         stored_cargo = storage.take_cargo(
             ship_id, warehouse_id, units, read_stored_cargo(STORED_CARGO_FILE)
         )
-        save_cargo_move(move, registered_ships, registered_warehouses, stored_cargo)
+        docked_at = departures.find_docking(ship_id, current_dockings).docked_at
+        transfer = visits.CargoTransfer(ship_id, docked_at, warehouse_id, visits.LOADED, units)
+        transfers = visits.record_transfer(transfer, read_transfers(TRANSFERS_FILE))
+        save_cargo_move(move, registered_ships, registered_warehouses, stored_cargo, transfers)
     except (OSError, ValueError) as error:
         typer.echo(f"could not load {ship_id}: {error}", err=True)
         raise typer.Exit(code=1) from None

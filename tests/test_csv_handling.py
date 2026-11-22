@@ -8,12 +8,14 @@ from ship_port_management.csv_handling import (
     read_docks,
     read_ships,
     read_stored_cargo,
+    read_transfers,
     read_warehouses,
     write_departures,
     write_dockings,
     write_docks,
     write_ships,
     write_stored_cargo,
+    write_transfers,
     write_warehouses,
 )
 from ship_port_management.departures import Departure
@@ -21,6 +23,7 @@ from ship_port_management.dockings import Docking
 from ship_port_management.docks import Dock
 from ship_port_management.ships import Ship
 from ship_port_management.storage import StoredCargo
+from ship_port_management.visits import LOADED, UNLOADED, CargoTransfer
 from ship_port_management.warehouses import Warehouse
 
 ATLAS = Ship("IMO9074729", "Atlas", "2026-10-14T09:30", 500, 40)
@@ -214,3 +217,27 @@ def test_two_ships_at_the_same_dock_are_refused(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="dock North is already occupied"):
         read_dockings(dockings_file)
+
+
+def test_transfers_written_can_be_read_back(tmp_path: Path) -> None:
+    transfers_file = tmp_path / "data" / "cargo_transfers.csv"
+    transfers = [
+        CargoTransfer("IMO9074729", "2026-10-14T10:00", "W-NORTH", UNLOADED, 30),
+        CargoTransfer("IMO9074729", "2026-10-14T10:00", "W-NORTH", LOADED, 10),
+    ]
+    write_transfers(transfers_file, transfers)
+    assert read_transfers(transfers_file) == transfers
+
+
+def test_missing_file_means_no_transfers(tmp_path: Path) -> None:
+    assert read_transfers(tmp_path / "missing.csv") == []
+
+
+def test_transfer_row_with_an_unknown_direction_is_refused(tmp_path: Path) -> None:
+    transfers_file = tmp_path / "cargo_transfers.csv"
+    transfers_file.write_text(
+        "ship_id,docked_at,warehouse_id,direction,units\n"
+        "IMO9074729,2026-10-14T10:00,W-NORTH,sideways,30\n"
+    )
+    with pytest.raises(ValueError, match="direction must be unloaded or loaded"):
+        read_transfers(transfers_file)
