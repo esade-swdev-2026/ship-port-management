@@ -307,12 +307,21 @@ def require_terminal(command: str) -> None:
 
 
 @app.command()
-def tui() -> None:
+def tui(vim: bool = False) -> None:
     """Open the terminal interface with tabs for ships, docks, warehouses and fees."""
     require_terminal("tui")
     from ship_port_management.tui import HarbourApp
 
-    HarbourApp().run()
+    HarbourApp(vim=vim).run()
+
+
+@app.command()
+def tutor() -> None:
+    """Practise the terminal interface and vim mode on a practice port that is thrown away."""
+    require_terminal("tutor")
+    from ship_port_management.tutor import run_tutor
+
+    run_tutor()
 
 
 if __name__ == "__main__":

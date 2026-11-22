@@ -1,5 +1,6 @@
 import contextlib
 import io
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -33,6 +34,7 @@ BAR_WIDTH = 12
 TIDE_SECONDS = 0.1
 TIDE_STEP = 0.12
 MIN_HEIGHT_FOR_SHIP = 34
+G_CHORD_SECONDS = 1.0
 TABS = ("ships", "docks", "warehouses", "fees")
 
 TERMINAL = Theme(
@@ -71,8 +73,23 @@ TERMINAL = Theme(
 )
 
 SELECTION_FIELD = {"ships": "ship_id", "docks": "dock_id", "warehouses": "warehouse_id"}
+VIM_ACTIONS = {
+    "cursor_down",
+    "cursor_up",
+    "first_row",
+    "last_row",
+    "half_page_down",
+    "half_page_up",
+    "previous_tab",
+    "next_tab",
+    "put",
+}
+PLAIN_ACTIONS = {"load"}
+FORM_NORMAL_ACTIONS = {"next_field", "previous_field", "insert", "append", "save", "cancel"}
 TIME_NOTE = "e.g. 2026-10-18T09:30, empty = now"
 PLAIN_HINT = "enter save · esc cancel"
+INSERT_HINT = "-- INSERT --\nesc normal mode · enter next box"
+NORMAL_HINT = "-- NORMAL --\nj/k box · i/a type · enter save · q cancel"
 
 
 def whole_number(text: str, name: str) -> int:
@@ -302,6 +319,10 @@ class ShipArt(Widget):
         return art
 
 
+class FormBox(Vertical, can_focus=True):
+    pass
+
+
 def field_note(field: Field, port: Port | None) -> str:
     if field.choices is None or port is None:
         return field.note
@@ -309,16 +330,28 @@ def field_note(field: Field, port: Port | None) -> str:
 
 
 class FormScreen(ModalScreen[str | None]):
-    BINDINGS = [Binding("escape", "cancel", "cancel")]
+    BINDINGS = [
+        Binding("escape", "escape", "cancel"),
+        Binding("j", "next_field", show=False),
+        Binding("k", "previous_field", show=False),
+        Binding("i", "insert", show=False),
+        Binding("a", "append", show=False),
+        Binding("enter", "save", show=False),
+        Binding("q", "cancel", show=False),
+    ]
 
-    def __init__(self, form: Form, prefill: dict[str, str], port: Port | None) -> None:
+    def __init__(
+        self, form: Form, prefill: dict[str, str], port: Port | None, vim: bool = False
+    ) -> None:
         super().__init__()
         self.form = form
         self.prefill = prefill
         self.port = port
+        self.vim = vim
+        self.field_index = 0
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="form"):
+        with FormBox(id="form"):
             yield Label(self.form.title, id="form-title")
             for field in self.form.fields:
                 label = f"{field.label} (optional)" if field.optional else field.label
@@ -340,6 +373,53 @@ class FormScreen(ModalScreen[str | None]):
 
     def inputs(self) -> list[Input]:
         return list(self.query(Input))
+
+    def in_normal_mode(self) -> bool:
+        return self.vim and isinstance(self.focused, FormBox)
+
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        if action in FORM_NORMAL_ACTIONS:
+            return self.in_normal_mode()
+        return True
+
+    def on_descendant_focus(self, event: events.DescendantFocus) -> None:
+        if isinstance(self.focused, Input):
+            self.field_index = self.inputs().index(self.focused)
+        self.show_mode()
+
+    def show_mode(self) -> None:
+        normal = self.in_normal_mode()
+        hint = PLAIN_HINT if not self.vim else NORMAL_HINT if normal else INSERT_HINT
+        self.query_one("#form-hint", Label).update(hint)
+        for index, box in enumerate(self.inputs()):
+            box.set_class(normal and index == self.field_index, "-selected")
+
+    def action_escape(self) -> None:
+        if self.vim and isinstance(self.focused, Input):
+            self.query_one(FormBox).focus()
+            return
+        self.dismiss(None)
+
+    def select_field(self, index: int) -> None:
+        self.field_index = max(0, min(len(self.inputs()) - 1, index))
+        self.show_mode()
+
+    def action_next_field(self) -> None:
+        self.select_field(self.field_index + 1)
+
+    def action_previous_field(self) -> None:
+        self.select_field(self.field_index - 1)
+
+    def type_into_field(self, at_end: bool) -> None:
+        box = self.inputs()[self.field_index]
+        box.focus()
+        box.cursor_position = len(box.value) if at_end else 0
+
+    def action_insert(self) -> None:
+        self.type_into_field(at_end=False)
+
+    def action_append(self) -> None:
+        self.type_into_field(at_end=True)
 
     def value(self, field: Field) -> str:
         return self.query_one(f"#field-{field.key}", Input).value.strip()
@@ -380,12 +460,34 @@ PLAIN_KEYS = (
     ("u", "unload cargo into a warehouse"),
     ("l", "load cargo onto a ship"),
     ("r", "reload the data files"),
+    ("v", "turn vim mode on"),
+    ("?", "show this help"),
+    ("q", "quit"),
+)
+VIM_KEYS = (
+    ("j k", "move between rows"),
+    ("gg G", "first / last row"),
+    ("ctrl+d ctrl+u", "half a page down / up"),
+    ("h l", "previous / next tab"),
+    ("1 2 3 4", "jump to a tab"),
+    ("n", "add a ship, dock or warehouse, on its tab"),
+    ("d", "dock the selected ship"),
+    ("u", "unload cargo into a warehouse"),
+    ("p", "load cargo onto a ship (put)"),
+    ("v", "turn vim mode off"),
     ("?", "show this help"),
     ("q", "quit"),
 )
 FORM_KEYS = (
     ("enter", "next box, saves on the last one"),
     ("esc", "cancel"),
+)
+VIM_FORM_KEYS = (
+    ("esc", "normal mode, esc again cancels"),
+    ("j k", "previous / next box"),
+    ("i a", "type at the start / end of the box"),
+    ("enter", "save"),
+    ("q", "cancel"),
 )
 
 
@@ -405,11 +507,17 @@ class HelpScreen(ModalScreen[None]):
         Binding("question_mark", "close"),
     ]
 
+    def __init__(self, vim: bool) -> None:
+        super().__init__()
+        self.vim = vim
+
     def compose(self) -> ComposeResult:
         with Vertical(id="help"):
-            yield Label("Keys", id="help-title")
-            yield Label(key_list("tables", PLAIN_KEYS))
-            yield Label(key_list("forms", FORM_KEYS), id="help-forms")
+            yield Label("Keys" + (" · vim mode" if self.vim else ""), id="help-title")
+            yield Label(key_list("tables", VIM_KEYS if self.vim else PLAIN_KEYS))
+            yield Label(
+                key_list("forms", VIM_FORM_KEYS if self.vim else FORM_KEYS), id="help-forms"
+            )
             yield Label("esc, q or ? closes this", id="help-close")
 
     def action_close(self) -> None:
@@ -443,7 +551,7 @@ class HarbourApp(App[None]):
         height: 1; padding: 0 1; border: none;
         background: ansi_default; border-left: outer ansi_bright_black;
     }
-    #form Input:focus { border-left: outer ansi_default; text-style: bold; }
+    #form Input:focus, #form Input.-selected { border-left: outer ansi_default; text-style: bold; }
     #form Input > .input--placeholder { text-style: dim; }
     #form-error { color: ansi_red; display: none; width: 100%; margin-top: 1; }
     HelpScreen { align: center middle; background: ansi_default; }
@@ -465,7 +573,17 @@ class HarbourApp(App[None]):
         Binding("n", "new", "new"),
         Binding("d", "open_form('dock')", "dock"),
         Binding("u", "open_form('unload')", "unload"),
-        Binding("l", "open_form('load')", "load"),
+        Binding("l", "load", "load"),
+        Binding("p", "put", "load"),
+        Binding("j", "cursor_down", "move", key_display="hjkl"),
+        Binding("k", "cursor_up", show=False),
+        Binding("h", "previous_tab", show=False),
+        Binding("l", "next_tab", show=False),
+        Binding("g", "first_row", show=False),
+        Binding("G", "last_row", show=False),
+        Binding("ctrl+d", "half_page_down", show=False),
+        Binding("ctrl+u", "half_page_up", show=False),
+        Binding("v", "toggle_vim", "vim"),
         Binding("question_mark", "help", "help", key_display="?"),
         Binding("q", "quit", "quit"),
         Binding("r", "refresh", show=False),
@@ -475,15 +593,19 @@ class HarbourApp(App[None]):
         Binding("4", "show_tab('fees')", show=False),
     ]
     FORMS = {"dock": DOCK_SHIP, "unload": UNLOAD_CARGO, "load": LOAD_CARGO}
+    SHOW_SHIP = True
 
-    def __init__(self) -> None:
+    def __init__(self, vim: bool = False) -> None:
         super().__init__()
         self.register_theme(TERMINAL)
         self.theme = TERMINAL.name
+        self.vim_mode = vim
+        self.last_g_press = 0.0
         self.port: Port | None = None
 
     def compose(self) -> ComposeResult:
-        yield ShipArt()
+        if self.SHOW_SHIP:
+            yield ShipArt()
         yield Label("", id="summary")
         with TabbedContent(initial="ships"):
             for tab_id in TABS:
@@ -508,19 +630,83 @@ class HarbourApp(App[None]):
         self.table("ships").focus()
 
     def on_resize(self, event: events.Resize) -> None:
-        self.query_one(ShipArt).display = event.size.height >= MIN_HEIGHT_FOR_SHIP
+        for art in self.query(ShipArt):
+            art.display = event.size.height >= MIN_HEIGHT_FOR_SHIP
+
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        if action in VIM_ACTIONS:
+            return self.vim_mode
+        if action in PLAIN_ACTIONS:
+            return not self.vim_mode
+        return True
+
+    def after_change(self) -> None:
+        pass
+
+    def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
+        self.after_change()
 
     def table(self, tab_id: str) -> DataTable[str | Text]:
         return self.query_one(f"#{tab_id}-table", DataTable)
 
     def on_tabbed_content_tab_activated(self, event: TabbedContent.TabActivated) -> None:
         event.pane.query_one(DataTable).focus()
+        self.after_change()
 
     def action_show_tab(self, tab_id: str) -> None:
         self.query_one(TabbedContent).active = tab_id
 
+    def active_table(self) -> DataTable[str | Text]:
+        return self.table(self.query_one(TabbedContent).active)
+
+    def move_to_row(self, row: int) -> None:
+        table = self.active_table()
+        if table.row_count:
+            table.move_cursor(row=max(0, min(table.row_count - 1, row)))
+
+    def action_cursor_down(self) -> None:
+        self.move_to_row(self.active_table().cursor_row + 1)
+
+    def action_cursor_up(self) -> None:
+        self.move_to_row(self.active_table().cursor_row - 1)
+
+    def action_half_page_down(self) -> None:
+        table = self.active_table()
+        self.move_to_row(table.cursor_row + max(1, table.size.height // 2))
+
+    def action_half_page_up(self) -> None:
+        table = self.active_table()
+        self.move_to_row(table.cursor_row - max(1, table.size.height // 2))
+
+    def action_first_row(self) -> None:
+        pressed_at = time.monotonic()
+        if pressed_at - self.last_g_press <= G_CHORD_SECONDS:
+            self.move_to_row(0)
+            self.last_g_press = 0.0
+        else:
+            self.last_g_press = pressed_at
+
+    def action_last_row(self) -> None:
+        self.move_to_row(self.active_table().row_count - 1)
+
+    def move_tab(self, step: int) -> None:
+        index = TABS.index(self.query_one(TabbedContent).active) + step
+        self.action_show_tab(TABS[max(0, min(len(TABS) - 1, index))])
+
+    def action_next_tab(self) -> None:
+        self.move_tab(1)
+
+    def action_previous_tab(self) -> None:
+        self.move_tab(-1)
+
     def action_help(self) -> None:
-        self.push_screen(HelpScreen())
+        self.push_screen(HelpScreen(self.vim_mode))
+
+    def action_toggle_vim(self) -> None:
+        self.vim_mode = not self.vim_mode
+        self.refresh_bindings()
+        self.action_refresh()
+        self.notify("vim mode on" if self.vim_mode else "vim mode off")
 
     def action_refresh(self) -> None:
         try:
@@ -535,6 +721,7 @@ class HarbourApp(App[None]):
         self.fill_warehouses(port)
         self.fill_fees(port, fees)
         self.show_summary(port)
+        self.after_change()
 
     def fill_ships(self, port: Port) -> None:
         table = self.table("ships")
@@ -591,7 +778,7 @@ class HarbourApp(App[None]):
         summary = status.describe_port_summary(
             port.ships, port.docks, port.warehouses, port.dockings
         )
-        self.query_one("#summary", Label).update(summary)
+        self.query_one("#summary", Label).update(summary + (" · vim" if self.vim_mode else ""))
 
     def selection(self) -> dict[str, str]:
         tab_id = self.query_one(TabbedContent).active
@@ -613,10 +800,16 @@ class HarbourApp(App[None]):
     def action_open_form(self, name: str) -> None:
         self.open(self.FORMS[name], self.selection())
 
+    def action_load(self) -> None:
+        self.action_open_form("load")
+
+    def action_put(self) -> None:
+        self.action_open_form("load")
+
     def open(self, form: Form, prefill: dict[str, str]) -> None:
         def saved(message: str | None) -> None:
             if message is not None:
                 self.notify(message)
                 self.action_refresh()
 
-        self.push_screen(FormScreen(form, prefill, self.port), saved)
+        self.push_screen(FormScreen(form, prefill, self.port, self.vim_mode), saved)
